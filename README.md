@@ -1,66 +1,48 @@
-# Remote Desk RDP Launcher | 远程桌面控制中心 🚀
+# Remote Desk 控制中心 (RDP Launcher)
 
-[English](#english-version) | [中文说明](#中文版)
+**极速、一键直连远程桌面的现代化管理工具。**
 
----
+`Remote Desk` 是一款小巧、精致且功能强大的 Windows 远程桌面（RDP）一键启动器。它告别了 Windows 原生 `mstsc` 繁杂的设置界面，将美学设计与高频连接需求完美融合，提供了极致的连接体验。该软件被编译为**单文件独立无依赖**的 `.exe` 可执行程序，即点即开。
 
-<a name="english-version"></a>
-## English Version
+## ✨ 核心特性
 
-Remote Desk is a modern, secure, and high-performance one-click RDP (Remote Desktop Protocol) launcher built with C# and WPF. It offers a seamless, theme-aware user experience while ensuring enterprise-grade security for your credentials.
+### 🎨 现代化美学 UI
+- **动态主题同步**：全面支持 Windows 10/11 的特性。程序的控件、字体、背景以及密码输入框色彩，会完全随动于您的 Windows 全局主题颜色（包括深色/浅色模式以及系统主题强调色）。
+- **无边框沉浸式下拉框**：深度定制了完全匹配输入框宽度的扁平化下拉菜单，告别了系统原生的粗黑边框，带有精致的阴影和圆角（6px）。
+- **个性化头像**：支持一键上传和更换圆形高清头像，支持图像质量缩放（HighQuality），带有立体阴影悬浮特效，让冰冷的工具多一份私人定制的温度。
 
-### ✨ Key Features
-- **Modern UI/UX**: Full synchronization with Windows 10/11 system themes, including dark/light modes and accent colors.
-- **Security First**: Credentials are encrypted using the Windows **Data Protection API (DPAPI)** and stored locally in the system Credential Manager. No plaintext passwords or external data uploads.
-- **Verified History**: Automatically validates connectivity (TCP Handshake) before persisting history, keeping your list clean from invalid entries.
-- **Efficiency Boosters**: Quick integration for Network Share (`\\ip`), dedicated Port input, and multi-monitor array scheduling.
-- **Portable Architecture**: Single e-file (.exe) with no external dependencies. Just click and go.
+### 🛡️ 企业级极客安全机制
+- **Cmdkey 凭证保险箱**：软件**绝不**将您的明文密码以文本形式保存在本地！所有的登录凭据均被安全加密，并自动注入到 Windows 官方的 Credential Manager（凭据管理器）中，由系统级的高强度 DPAPI 保驾护航。
+- **动态状态跟踪识别（Human Input Detection）**：
+  - 加载或切换账号时，立刻智能串联并自动完整填充主机IP、用户名和密码。
+  - **防误操作隔离**：当键盘侦测到您**手动修改光标输入**某个新 IP 时，自动清空下方的旧用户名和密码，防止关键密码串号错误发送。
+  - **连带保护**：当您在保留 IP 的前提下更换使用者（修改用户名）时，密码框也会自动清空。
 
-### 🛡️ Security & Privacy
-- **Local Encryption**: All data is bound to the current user's DPAPI scope.
-- **Self-Contained**: No telemetry, no background services, and no unauthorized network calls.
+### ⚡ 极速控制选项
+- **多显示器阵列调度**：专设了贴心的“显示模式”选择面板（包含：📺 全部显示器、🖥️ 仅主显示器、💻 仅副显示器）。程序会根据偏好，在毫秒级自动构建底层 `.rdp` 指令文件进行重定向支持。
+- **一扫即空历史记录**：在下拉弹窗的历史记录中，每个账号的右侧都悬浮着极简设计的“X”清除按钮，点击即可从本地内存和系统凭据库中一并物理删除记录，再无残留。
 
-### 📜 LICENSE & DISCLAIMER (IMPORTANT)
-**Version: 1.2.5.0**
-**Copyright © 2026 Kukie Zhang. All Rights Reserved.**
-
-1. **Non-Commercial Use Only**: This software is provided for personal, educational, and research purposes. **Commercial redistribution, resale, or integration into commercial products is strictly prohibited.**
-2. **"AS-IS" Warranty**: This software is provided "as-is" without warranty of any kind, express or implied.
-3. **Limitation of Liability**: In no event shall the author be liable for any damages (including but not limited to loss of data, system failure, or hardware damage) arising out of the use or inability to use this software.
-4. **Attribution**: Any modifications or private redistribution must retain original copyright notices.
+### 🟢 界面防僵死状态反馈
+- 点击“立即连接”后，按钮会自动变更为高亮的“正在连接中...”并锁定按钮状态，防止网络延迟时手抖多点。3秒后状态机平滑恢复为原状，不阻塞后续流程。
 
 ---
 
-<a name="中文版"></a>
-## 中文版本
+## 🚀 运行与配置文件位置
 
-`Remote Desk` 是一款小巧、精致且功能强大的 Windows 远程桌面一键启动器。它通过美学设计与极客安全逻辑的融合，为高频远程办公用户提供了极致的连接体验。
+由于采用的是纯绿色免安装架构，您唯一需要做的就是双击 `RdpLauncher.exe` 即可使用。
 
-### ✨ 核心特性
-- **现代化美学 UI**：全面支持 Windows 10/11 动态主题同步（深色/浅色模式及系统强调色）。
-- **极客安全机制**：基于 Windows **DPAPI** 机制对凭据进行本地强加密，并同步至系统凭据管理器（Credential Manager），开发者承诺**绝不收集或上传**任何用户隐私数据。
-- **智能历史验证**：内置后台 TCP 端口握手侦测，只有验证可连通的账号才会存入历史记录，拒绝脏数据堆叠。
-- **效率倍增器**：集成一键直达共享文件夹 (`\\ip`)、独立端口管理、以及多显示器调度预设。
-- **纯绿色架构**：单文件独立运行，无任何外部库依赖。
+程序会在您的本地生成少量的静默配置文件夹和备份：
+- **配置文件目录**：`C:\Users\%USERNAME%\AppData\Roaming\RemoteDesk`
+- **内容清单**：
+  - `connections.json`：使用 DataContractJsonSerializer 加密的账号列表历史记录。
+  - `avatar.png`：您自定义设定的个性化连接头像。
 
-### 🛡️ 安全与隐私
-- **本地化存储**：所有配置和加密凭据均存储在用户本机的加密域内。
-- **无后门/无外联**：程序不含任何遥测插件，不进行未经许可的非必要网络通信。
+您可以通过点击标题栏上方那颗绿色的“指南”图标，秒开配置目录查看或清空缓存。
 
-### 📜 法律声明与许可协议 (重要)
-**版本号: 1.2.5.0**
-**Copyright © 2026 Kukie Zhang. 保留所有权利。**
-
-1. **仅限非商业用途**：本软件仅供个人学习、研究及日常办公私人使用。**严禁任何形式的商业转售、盈利性打包分发或将其集成至商业化产品中。**
-2. **无担保声明**：本软件按“现状”提供，不提供任何明示或暗示的保证（包括但不限于对适销性或特定用途适用性的保证）。
-3. **责任限制**：开发者（Kukie Zhang）不对因使用本软件或无法使用本软件而导致的任何后果（包括但不限于数据丢失、系统瘫痪或硬件损耗）承担赔偿责任。
-4. **署名要求**：任何对源码的私人修改或衍生版本，必须在显著位置保留原作者的版权署名。
+## 🛠️ 技术要求
+- **系统支持**：Windows 10 / Windows 11
+- **环境要求**：.NET Framework 4.8 及以上（大部分 Win10+ 电脑已出厂自带）
 
 ---
 
-### 🚀 Contact / 联系方式
-- **Developer**: Kukie Zhang
-- **Support Email**: [Kukie.yiqing@outlook.com](mailto:Kukie.yiqing@outlook.com)
-
----
-*"用最优雅的技术，缩短每一次穿越山海的桌面距离。"*
+*“用最优雅的技术，缩短每一次穿越山海的桌面距离。”*

@@ -17,7 +17,6 @@ using System.Windows.Threading;
 using System.Security.Cryptography;
 using System.Text;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace RdpLauncher
 {
@@ -25,16 +24,12 @@ namespace RdpLauncher
     public class ConnectionEntry
     {
         [DataMember] public string Host { get; set; }
-        [DataMember] public string Port { get; set; }
         [DataMember] public string Username { get; set; }
         [DataMember] public string EncryptedPass { get; set; }
-        public string DisplayName { 
-            get { 
-                string p = (string.IsNullOrEmpty(this.Port) || this.Port == "3389") ? "" : ":" + this.Port;
-                string h = this.Host + p;
-                return string.IsNullOrEmpty(this.Username) ? h : h + " (" + this.Username + ")"; 
-            } 
-        }
+        [DataMember] public int DisplayModeIndex { get; set; }
+        [DataMember] public int ResolutionIndex { get; set; }
+        [DataMember] public int ColorDepthIndex { get; set; }
+        public string DisplayName { get { return string.IsNullOrEmpty(this.Username) ? this.Host : this.Host + " (" + this.Username + ")"; } }
         public override string ToString() { return this.Host; }
     }
 
@@ -44,16 +39,16 @@ namespace RdpLauncher
 
         private Window mainWindow;
         private ComboBox ipBox;
-        private TextBox portBox;
         private TextBox userBox;
         private PasswordBox passBox;
         private ComboBox displayModeBox;
+        private ComboBox resolutionBox;
+        private ComboBox colorDepthBox;
         private Grid rootGrid;
         private StackPanel mainStack;
         private Button connectBtn;
         private Ellipse avatarCircle;
         private Border guideBox;
-        private Border aboutBtn;
         private Border shareIcon;
         private TextBlock subTitleTb;
         private Process activeMstsc;
@@ -118,11 +113,9 @@ namespace RdpLauncher
             this.mainWindow = new Window();
             this.mainWindow.Title = "Remote Desk RDP Launcher";
             this.mainWindow.Width = 400;
-            this.mainWindow.Height = 680;
+            this.mainWindow.Height = 760;
             this.mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            this.mainWindow.ResizeMode = ResizeMode.CanResize;
-            this.mainWindow.MinHeight = 500;
-            this.mainWindow.MinWidth = 380;
+            this.mainWindow.ResizeMode = ResizeMode.CanMinimize;
             this.mainWindow.FontFamily = new FontFamily("Segoe UI");
             this.mainWindow.Icon = this.GetImg(ICON_B64);
 
@@ -131,12 +124,7 @@ namespace RdpLauncher
 
             this.mainStack = new StackPanel();
             this.mainStack.Margin = new Thickness(25, 15, 25, 15);
-            
-            ScrollViewer mainScroll = new ScrollViewer();
-            mainScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
-            mainScroll.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
-            mainScroll.Content = this.mainStack;
-            this.rootGrid.Children.Add(mainScroll);
+            this.rootGrid.Children.Add(this.mainStack);
 
             this.avatarCircle = new Ellipse();
             this.avatarCircle.Width = 70;
@@ -181,32 +169,9 @@ namespace RdpLauncher
             hostT.FontSize = 20;
             hostT.FontWeight = FontWeights.ExtraBold;
             hostT.VerticalAlignment = VerticalAlignment.Center;
-            hostT.Margin = new Thickness(12, 0, 10, 0);
+            hostT.Margin = new Thickness(12, 0, 12, 0);
             this.labels.Add(hostT);
             hv.Children.Add(hostT);
-
-            this.aboutBtn = new Border();
-            this.aboutBtn.Width = 26; this.aboutBtn.Height = 26;
-            this.aboutBtn.CornerRadius = new CornerRadius(6);
-            this.aboutBtn.BorderThickness = new Thickness(1);
-            this.aboutBtn.BorderBrush = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128));
-            this.aboutBtn.Background = Brushes.Transparent;
-            this.aboutBtn.Cursor = Cursors.Hand;
-            this.aboutBtn.ToolTip = "关于软件";
-            this.aboutBtn.Margin = new Thickness(0, 0, 8, 0);
-            this.aboutBtn.MouseLeftButtonDown += (s, e) => {
-                AboutWindow aw = new AboutWindow("Remote Desk RDP Launcher", "Kukie.yiqing@outlook.com", this.GetAccent(), !this.IsLight());
-                aw.Owner = this.mainWindow; aw.ShowDialog();
-            };
-            this.aboutBtn.MouseEnter += (s, e) => { this.aboutBtn.Background = new SolidColorBrush(Color.FromArgb(30, 0, 229, 255)); this.aboutBtn.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 0, 229, 255)); };
-            this.aboutBtn.MouseLeave += (s, e) => { this.aboutBtn.Background = Brushes.Transparent; this.aboutBtn.BorderBrush = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128)); };
-            
-            System.Windows.Shapes.Path iPath = new System.Windows.Shapes.Path();
-            iPath.Data = Geometry.Parse("M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2ZM13,17H11V11H13V17ZM13,9H11V7H13V9Z");
-            iPath.Fill = new SolidColorBrush(Color.FromRgb(0, 229, 255)); 
-            Viewbox iv = new Viewbox(); iv.Width = 16; iv.Height = 16; iv.Child = iPath;
-            this.aboutBtn.Child = iv;
-            hv.Children.Add(this.aboutBtn);
 
             this.shareIcon = new Border();
             this.shareIcon.Width = 26; this.shareIcon.Height = 26;
@@ -239,8 +204,6 @@ namespace RdpLauncher
             this.mainStack.Children.Add(this.subTitleTb);
 
             this.ipBox = this.CreateModernDropdown(this.mainStack, "远程主机 IP");
-            this.portBox = this.CreateModernField(this.mainStack, "远程端口");
-            this.portBox.Text = "3389";
             this.userBox = this.CreateModernField(this.mainStack, "用户名");
             this.userBox.TextChanged += new TextChangedEventHandler(OnUserTextChanged);
             
@@ -262,6 +225,28 @@ namespace RdpLauncher
             this.displayModeBox.ItemContainerStyle = this.GetComboItemStyle();
             this.displayModeBox.Items.Add("📺 全部显示器"); this.displayModeBox.Items.Add("🖥️ 仅主显示器"); this.displayModeBox.Items.Add("💻 仅副显示器"); this.displayModeBox.SelectedIndex = 0;
             mb.Child = this.displayModeBox; this.mainStack.Children.Add(mb);
+
+            this.CreateLabel(this.mainStack, "分辨率");
+            Border rb = new Border();
+            rb.CornerRadius = new CornerRadius(6); rb.BorderThickness = new Thickness(1.2); rb.Height = 36; rb.Margin = new Thickness(0, 0, 0, 10); rb.Padding = new Thickness(0);
+            this.fieldsBorders.Add(rb);
+            this.resolutionBox = new ComboBox();
+            this.resolutionBox.Style = this.GetModernComboStyle();
+            this.resolutionBox.IsEditable = true; this.resolutionBox.IsReadOnly = true; this.resolutionBox.Background = Brushes.Transparent; this.resolutionBox.BorderThickness = new Thickness(0); this.resolutionBox.VerticalContentAlignment = VerticalAlignment.Center; this.resolutionBox.FontSize = 14;
+            this.resolutionBox.ItemContainerStyle = this.GetComboItemStyle();
+            this.resolutionBox.Items.Add("🔲 自适应全屏"); this.resolutionBox.Items.Add("🔲 3840 x 2160 (4K)"); this.resolutionBox.Items.Add("🔲 2560 x 1440 (2K)"); this.resolutionBox.Items.Add("🔲 1920 x 1080"); this.resolutionBox.Items.Add("🔲 1366 x 768"); this.resolutionBox.Items.Add("🔲 1280 x 720"); this.resolutionBox.Items.Add("🔲 1024 x 768"); this.resolutionBox.SelectedIndex = 0;
+            rb.Child = this.resolutionBox; this.mainStack.Children.Add(rb);
+
+            this.CreateLabel(this.mainStack, "色彩深度");
+            Border cb = new Border();
+            cb.CornerRadius = new CornerRadius(6); cb.BorderThickness = new Thickness(1.2); cb.Height = 36; cb.Margin = new Thickness(0, 0, 0, 10); cb.Padding = new Thickness(0);
+            this.fieldsBorders.Add(cb);
+            this.colorDepthBox = new ComboBox();
+            this.colorDepthBox.Style = this.GetModernComboStyle();
+            this.colorDepthBox.IsEditable = true; this.colorDepthBox.IsReadOnly = true; this.colorDepthBox.Background = Brushes.Transparent; this.colorDepthBox.BorderThickness = new Thickness(0); this.colorDepthBox.VerticalContentAlignment = VerticalAlignment.Center; this.colorDepthBox.FontSize = 14;
+            this.colorDepthBox.ItemContainerStyle = this.GetComboItemStyle();
+            this.colorDepthBox.Items.Add("🔴 最高质量 (32位)"); this.colorDepthBox.Items.Add("🟢 真彩色 (24位)"); this.colorDepthBox.Items.Add("🔵 增强色 (16位)"); this.colorDepthBox.SelectedIndex = 0;
+            cb.Child = this.colorDepthBox; this.mainStack.Children.Add(cb);
             
             this.connectBtn = new Button();
             this.connectBtn.Content = "立 即 连 接";
@@ -312,10 +297,11 @@ namespace RdpLauncher
                     Application.Current.Resources["PopupBorder"] = d ? new SolidColorBrush(Color.FromRgb(50, 50, 60)) : new SolidColorBrush(Color.FromRgb(220, 220, 220));
                 }
                 if (this.ipBox != null) this.ipBox.Foreground = ab; 
-                if (this.portBox != null) this.portBox.Foreground = ab;
                 if (this.userBox != null) this.userBox.Foreground = ab;
                 if (this.passBox != null) this.passBox.Foreground = ab;
                 if (this.displayModeBox != null) this.displayModeBox.Foreground = ab;
+                if (this.resolutionBox != null) this.resolutionBox.Foreground = ab;
+                if (this.colorDepthBox != null) this.colorDepthBox.Foreground = ab;
                 LinearGradientBrush grad = new LinearGradientBrush(); grad.GradientStops.Add(new GradientStop(a, 0.0)); grad.GradientStops.Add(new GradientStop(Color.FromRgb((byte)Math.Min(255, a.R+40), (byte)Math.Min(255, a.G+40), (byte)Math.Min(255, a.B+40)), 1.0));
                 if (this.connectBtn != null) this.connectBtn.Background = grad; 
                 if (this.avatarCircle != null) this.avatarCircle.Stroke = ab;
@@ -350,7 +336,6 @@ namespace RdpLauncher
             if (this.ipBox.SelectedItem != null) return;
 
             this.isAutoFilling = true;
-            this.portBox.Text = "3389";
             this.userBox.Text = "";
             this.passBox.Password = "";
             this.isAutoFilling = false;
@@ -370,9 +355,11 @@ namespace RdpLauncher
             ConnectionEntry en = box.SelectedItem as ConnectionEntry; 
             if (en != null) { 
                 this.isAutoFilling = true;
-                this.portBox.Text = string.IsNullOrEmpty(en.Port) ? "3389" : en.Port;
                 this.userBox.Text = en.Username; 
                 this.passBox.Password = this.Decrypt(en.EncryptedPass); 
+                this.displayModeBox.SelectedIndex = en.DisplayModeIndex;
+                this.resolutionBox.SelectedIndex = en.ResolutionIndex;
+                this.colorDepthBox.SelectedIndex = en.ColorDepthIndex;
                 this.isAutoFilling = false;
                 if (Application.Current != null) Application.Current.Dispatcher.BeginInvoke(new Action(() => { 
                     this.isAutoFilling = true;
@@ -435,7 +422,7 @@ namespace RdpLauncher
             FrameworkElementFactory btn = new FrameworkElementFactory(typeof(Button)); 
             btn.SetValue(DockPanel.DockProperty, Dock.Right); 
             btn.SetValue(Button.ContentProperty, "✕"); 
-            btn.SetValue(Button.ForegroundProperty, new SolidColorBrush(Color.FromRgb(255, 82, 82)));
+            btn.SetValue(Button.ForegroundProperty, Brushes.Gray);
             btn.SetValue(Button.CursorProperty, Cursors.Hand);
             btn.SetValue(Button.ToolTipProperty, "移除此记录");
             
@@ -490,9 +477,7 @@ namespace RdpLauncher
             if (b != null) {
                 ConnectionEntry en = b.DataContext as ConnectionEntry;
                 if (en != null) {
-                    ConfirmWindow cw = new ConfirmWindow("确定清除该账号记录吗？\n此操作物理删除且不可恢复。", this.GetAccent(), !this.IsLight());
-                    cw.Owner = this.mainWindow;
-                    if (cw.ShowDialog() == true) {
+                    if (MessageBox.Show("确定清除?", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
                         this.connections.Remove(en); this.SaveConnections(); this.CmdKeyDelete(en.Host);
                     }
                 }
@@ -500,157 +485,95 @@ namespace RdpLauncher
             e.Handled = true;
         }
 
-        private void StartConnection() {
-            string h = this.ipBox.Text.Trim(); string prt = this.portBox.Text.Trim(); string u = this.userBox.Text.Trim(); string p = this.passBox.Password; if (string.IsNullOrEmpty(h) || string.IsNullOrEmpty(u)) return;
-            if (string.IsNullOrEmpty(prt)) prt = "3389";
-            
-            this.isAutoFilling = true;
+        private void SaveSuccessfulConnection(string h, string u, string p, int dp, int res, int col) {
             ConnectionEntry target = null;
-            for (int i = 0; i < this.connections.Count; i++) { if (this.connections[i].Host == h && (this.connections[i].Port == prt || (string.IsNullOrEmpty(this.connections[i].Port) && prt == "3389"))) { target = this.connections[i]; break; } }
-            if (target != null) this.connections.Remove(target);
-            ConnectionEntry entry = new ConnectionEntry(); entry.Host = h; entry.Port = prt; entry.Username = u; entry.EncryptedPass = this.Encrypt(p);
-            this.connections.Insert(0, entry);
-            this.ipBox.SelectedItem = entry;
-            this.ipBox.Text = h;
-            this.portBox.Text = prt;
-            this.userBox.Text = u;
-            this.passBox.Password = p;
-            this.isAutoFilling = false;
-            if (!string.IsNullOrEmpty(p)) this.CmdKeySave(h, u, p);
+            for (int i = 0; i < this.connections.Count; i++) { if (this.connections[i].Host == h) { target = this.connections[i]; break; } }
             
-            this.VerifyAndSave(entry);
+            string currentHost = this.ipBox.Text;
+            string currentUser = this.userBox.Text;
+            string currentPass = this.passBox.Password;
 
+            this.isAutoFilling = true;
+            if (target != null) this.connections.Remove(target);
+            ConnectionEntry entry = new ConnectionEntry(); entry.Host = h; entry.Username = u; entry.EncryptedPass = this.Encrypt(p);
+            entry.DisplayModeIndex = dp; entry.ResolutionIndex = res; entry.ColorDepthIndex = col;
+            this.connections.Insert(0, entry); this.SaveConnections();
+            
+            if (currentHost == h) {
+                this.ipBox.SelectedItem = entry;
+            }
+            this.ipBox.Text = currentHost;
+            this.userBox.Text = currentUser;
+            this.passBox.Password = currentPass;
+            this.isAutoFilling = false;
+
+            if (!string.IsNullOrEmpty(p)) this.CmdKeySave(h, u, p);
+        }
+
+        private void StartConnection() {
+            string h = this.ipBox.Text.Trim(); string u = this.userBox.Text.Trim(); string p = this.passBox.Password; if (string.IsNullOrEmpty(h) || string.IsNullOrEmpty(u)) return;
+            
+            this.isConnecting = true; this.connectBtn.IsEnabled = false; 
             try { 
-                this.isConnecting = true; this.connectBtn.IsEnabled = false; 
                 StringBuilder rdpHost = new StringBuilder(); 
-                rdpHost.AppendLine("full address:s:" + h + ":" + prt); 
+                rdpHost.AppendLine("full address:s:" + h); 
                 rdpHost.AppendLine("username:s:" + u); 
-                rdpHost.AppendLine("screen mode id:i:2");
-                if (this.displayModeBox.SelectedIndex == 0) { rdpHost.AppendLine("use multimon:i:1"); }
-                else if (this.displayModeBox.SelectedIndex == 1) { rdpHost.AppendLine("use multimon:i:0"); rdpHost.AppendLine("selectedmonitors:s:0"); }
-                else if (this.displayModeBox.SelectedIndex == 2) { rdpHost.AppendLine("use multimon:i:0"); rdpHost.AppendLine("selectedmonitors:s:1"); }
+
+                int dmIdx = this.displayModeBox.SelectedIndex;
+                if (dmIdx == 0) { rdpHost.AppendLine("use multimon:i:1"); }
+                else if (dmIdx == 1) { rdpHost.AppendLine("use multimon:i:0"); rdpHost.AppendLine("selectedmonitors:s:0"); }
+                else if (dmIdx == 2) { rdpHost.AppendLine("use multimon:i:0"); rdpHost.AppendLine("selectedmonitors:s:1"); }
+                
+                int resIdx = this.resolutionBox.SelectedIndex;
+                if (resIdx == 0) { rdpHost.AppendLine("screen mode id:i:2"); }
+                else {
+                    rdpHost.AppendLine("screen mode id:i:1");
+                    rdpHost.AppendLine("smart sizing:i:1");
+                    if (resIdx == 1) { rdpHost.AppendLine("desktopwidth:i:3840"); rdpHost.AppendLine("desktopheight:i:2160"); }
+                    else if (resIdx == 2) { rdpHost.AppendLine("desktopwidth:i:2560"); rdpHost.AppendLine("desktopheight:i:1440"); }
+                    else if (resIdx == 3) { rdpHost.AppendLine("desktopwidth:i:1920"); rdpHost.AppendLine("desktopheight:i:1080"); }
+                    else if (resIdx == 4) { rdpHost.AppendLine("desktopwidth:i:1366"); rdpHost.AppendLine("desktopheight:i:768"); }
+                    else if (resIdx == 5) { rdpHost.AppendLine("desktopwidth:i:1280"); rdpHost.AppendLine("desktopheight:i:720"); }
+                    else if (resIdx == 6) { rdpHost.AppendLine("desktopwidth:i:1024"); rdpHost.AppendLine("desktopheight:i:768"); }
+                }
+
+                int colIdx = this.colorDepthBox.SelectedIndex;
+                if (colIdx == 0) rdpHost.AppendLine("session bpp:i:32");
+                else if (colIdx == 1) rdpHost.AppendLine("session bpp:i:24");
+                else if (colIdx == 2) rdpHost.AppendLine("session bpp:i:16");
+
                 string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "RemoteDesk_Launcher.rdp"); 
                 System.IO.File.WriteAllText(path, rdpHost.ToString(), Encoding.UTF8); 
-                this.activeMstsc = System.Diagnostics.Process.Start("mstsc.exe", "\"" + path + "\"");
-                DispatcherTimer rt = new DispatcherTimer(); rt.Interval = TimeSpan.FromSeconds(3); rt.Tick += new EventHandler(OnResetTick); rt.Start(); 
-            } catch {}
-        }
-        private void OnResetTick(object s, EventArgs args) { 
-            DispatcherTimer rt = (DispatcherTimer)s;
-            this.isConnecting = false; this.connectBtn.IsEnabled = true; 
-            rt.Stop(); 
+
+                ProcessStartInfo psi = new ProcessStartInfo("mstsc.exe", "\"" + path + "\"");
+                this.activeMstsc = new Process();
+                this.activeMstsc.StartInfo = psi;
+                this.activeMstsc.EnableRaisingEvents = true;
+
+                this.activeMstsc.Exited += (s, ev) => {
+                    if (Application.Current != null) {
+                        Application.Current.Dispatcher.BeginInvoke(new Action(() => {
+                            this.isConnecting = false; this.connectBtn.IsEnabled = true; 
+                        }));
+                    }
+                };
+
+                this.activeMstsc.Start();
+                
+                DispatcherTimer rt = new DispatcherTimer(); rt.Interval = TimeSpan.FromSeconds(3); 
+                rt.Tick += (s, ev) => { 
+                    rt.Stop(); 
+                    if (this.activeMstsc != null && !this.activeMstsc.HasExited) {
+                        this.SaveSuccessfulConnection(h, u, p, dmIdx, resIdx, colIdx);
+                    }
+                }; 
+                rt.Start(); 
+            } catch (Exception ex) { 
+                this.isConnecting = false; this.connectBtn.IsEnabled = true; 
+                MessageBox.Show("启动远程桌面失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         private void CmdKeySave(string h, string u, string p) { ProcessStartInfo psi = new ProcessStartInfo("cmdkey", "/generic:TERMSRV/" + h + " /user:\"" + u + "\" /pass:\"" + p + "\""); psi.CreateNoWindow = true; psi.UseShellExecute = false; Process.Start(psi); }
         private void CmdKeyDelete(string h) { ProcessStartInfo psi = new ProcessStartInfo("cmdkey", "/delete:TERMSRV/" + h); psi.CreateNoWindow = true; psi.UseShellExecute = false; Process.Start(psi); }
-
-        private async void VerifyAndSave(ConnectionEntry entry) {
-            bool ok = false;
-            try {
-                using (var client = new System.Net.Sockets.TcpClient()) {
-                    var task = client.ConnectAsync(entry.Host, int.Parse(string.IsNullOrEmpty(entry.Port) ? "3389" : entry.Port));
-                    if (await Task.WhenAny(task, Task.Delay(1800)) == task) { await task; ok = true; }
-                }
-            } catch { }
-            if (ok) { this.SaveConnections(); }
-            else { Application.Current.Dispatcher.Invoke(() => { this.connections.Remove(entry); }); }
-        }
-    }
-
-    public class ConfirmWindow : Window {
-        public ConfirmWindow(string msg, Color accent, bool isDark) {
-            this.Title = "确认"; this.Width = 320; this.Height = 180;
-            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            this.ResizeMode = ResizeMode.NoResize; this.WindowStyle = WindowStyle.None;
-            this.AllowsTransparency = true; this.Background = Brushes.Transparent;
-            this.ShowInTaskbar = false;
-            
-            Border b = new Border(); b.CornerRadius = new CornerRadius(12);
-            b.Background = isDark ? new SolidColorBrush(Color.FromRgb(30, 30, 35)) : Brushes.White;
-            b.BorderThickness = new Thickness(1.5); b.BorderBrush = new SolidColorBrush(accent);
-            b.Padding = new Thickness(20);
-            
-            StackPanel s = new StackPanel();
-            TextBlock t = new TextBlock(); t.Text = msg; t.TextWrapping = TextWrapping.Wrap;
-            t.Foreground = new SolidColorBrush(Color.FromRgb(255, 82, 82)); 
-            t.FontSize = 14; t.FontWeight = FontWeights.SemiBold; t.Margin = new Thickness(0, 10, 0, 25); t.TextAlignment = TextAlignment.Center;
-            s.Children.Add(t);
-            
-            Grid g = new Grid(); g.ColumnDefinitions.Add(new ColumnDefinition()); g.ColumnDefinitions.Add(new ColumnDefinition());
-            Button y = new Button(); y.Content = "确定清除"; y.Height = 32; y.Margin = new Thickness(5); y.Cursor = Cursors.Hand;
-            y.Background = new SolidColorBrush(Color.FromRgb(255, 82, 82)); y.Foreground = Brushes.White;
-            y.Click += (se, ev) => { this.DialogResult = true; this.Close(); };
-            
-            Button n = new Button(); n.Content = "取消"; n.Height = 32; n.Margin = new Thickness(5); n.Cursor = Cursors.Hand;
-            n.Click += (se, ev) => { this.DialogResult = false; this.Close(); };
-            
-            Grid.SetColumn(y, 0); Grid.SetColumn(n, 1);
-            g.Children.Add(y); g.Children.Add(n);
-            s.Children.Add(g);
-            b.Child = s; this.Content = b;
-            
-            Style btnStyle = new Style(typeof(Button));
-            ControlTemplate ct = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory br = new FrameworkElementFactory(typeof(Border));
-            br.SetValue(Border.CornerRadiusProperty, new CornerRadius(6));
-            br.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            FrameworkElementFactory cp = new FrameworkElementFactory(typeof(ContentPresenter));
-            cp.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            cp.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            br.AppendChild(cp); ct.VisualTree = br; btnStyle.Setters.Add(new Setter(Button.TemplateProperty, ct));
-            y.Style = btnStyle; n.Style = btnStyle;
-        }
-    }
-
-    public class AboutWindow : Window {
-        public AboutWindow(string title, string email, Color accent, bool isDark) {
-            this.Title = "关于软件"; this.Width = 360; this.Height = 280;
-            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            this.ResizeMode = ResizeMode.NoResize; this.WindowStyle = WindowStyle.None;
-            this.AllowsTransparency = true; this.Background = Brushes.Transparent;
-            this.ShowInTaskbar = false;
-            
-            Border b = new Border(); b.CornerRadius = new CornerRadius(12);
-            b.Background = isDark ? new SolidColorBrush(Color.FromRgb(30, 30, 35)) : Brushes.White;
-            b.BorderThickness = new Thickness(1.5); b.BorderBrush = new SolidColorBrush(accent);
-            b.Padding = new Thickness(25);
-            
-            StackPanel s = new StackPanel();
-            TextBlock t = new TextBlock(); t.Text = title; t.FontSize = 18; t.FontWeight = FontWeights.Bold; t.Foreground = new SolidColorBrush(accent); t.Margin = new Thickness(0,0,0,12); t.TextAlignment = TextAlignment.Center;
-            s.Children.Add(t);
-            
-            TextBlock v = new TextBlock(); v.Text = "Version 1.2.5 (Build 20260402)"; v.FontSize = 11; v.Foreground = Brushes.Gray; v.Margin = new Thickness(0,0,0,15); v.TextAlignment = TextAlignment.Center;
-            s.Children.Add(v);
-            
-            TextBlock des = new TextBlock(); 
-            des.Text = "说明：本程序旨在提供安全、高效的 RDP 管理体验。所有登录凭据均通过 Windows DPAPI 强加密存储于本地，开发者承诺不收集任何隐私数据。"; 
-            des.FontSize = 12; des.TextWrapping = TextWrapping.Wrap; des.Foreground = isDark ? Brushes.LightGray : Brushes.DarkSlateGray; 
-            des.Margin = new Thickness(0,0,0,15); des.TextAlignment = TextAlignment.Center;
-            s.Children.Add(des);
-
-            TextBlock c = new TextBlock(); c.Text = "Copyright © 2026 Kukie Zhang. 保留所有权利。"; c.FontSize = 12; c.Foreground = isDark ? Brushes.White : Brushes.Black; c.TextAlignment = TextAlignment.Center;
-            s.Children.Add(c);
-            
-            TextBlock e = new TextBlock(); e.Text = "联系支持: " + email; e.FontSize = 12; e.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255)); e.Margin = new Thickness(0,5,0,20); e.TextAlignment = TextAlignment.Center;
-            s.Children.Add(e);
-            
-            Button cl = new Button(); cl.Content = "确 定"; cl.Height = 32; cl.Width = 120; cl.Cursor = Cursors.Hand;
-            cl.Background = new SolidColorBrush(accent); cl.Foreground = Brushes.White;
-            cl.Click += (se, ev) => { this.Close(); };
-            
-            Style btnStyle = new Style(typeof(Button));
-            ControlTemplate ct = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory br = new FrameworkElementFactory(typeof(Border));
-            br.SetValue(Border.CornerRadiusProperty, new CornerRadius(6));
-            br.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            FrameworkElementFactory cp = new FrameworkElementFactory(typeof(ContentPresenter));
-            cp.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            cp.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            br.AppendChild(cp); ct.VisualTree = br; btnStyle.Setters.Add(new Setter(Button.TemplateProperty, ct));
-            cl.Style = btnStyle; 
-            
-            s.Children.Add(cl);
-            b.Child = s; this.Content = b;
-            this.MouseLeftButtonDown += (se, ev) => { try { this.DragMove(); } catch {} };
-        }
     }
 }
