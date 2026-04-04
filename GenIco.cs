@@ -11,50 +11,61 @@ public class GenIco {
         
         DrawingVisual dv = new DrawingVisual();
         using (DrawingContext dc = dv.RenderOpen()) {
+            
+            // Draw the monitor+arrow icon on top
             GeometryDrawing gd = new GeometryDrawing();
             gd.Geometry = Geometry.Parse(svg);
             gd.Brush = new SolidColorBrush(Color.FromRgb(2, 248, 233));
             dc.DrawDrawing(gd);
         }
 
-        // Render to 256x256 image. The bounds of the geometry is roughly 0,0,1024,1024
+        // Render to 1024x1024 base image
         RenderTargetBitmap rtb = new RenderTargetBitmap(1024, 1024, 96, 96, PixelFormats.Pbgra32);
         rtb.Render(dv);
 
-        // Resize down to 256x256 for icon
-        var scale = new ScaleTransform(256.0 / 1024.0, 256.0 / 1024.0);
-        var scaledImage = new TransformedBitmap(rtb, scale);
-
-        // write app_icon.png
+        // write app_icon.png (full 1024x1024 for embedded resource)
         using (FileStream fs = File.Create("app_icon.png")) {
             PngBitmapEncoder enc = new PngBitmapEncoder();
             enc.Frames.Add(BitmapFrame.Create(rtb));
             enc.Save(fs);
         }
 
-        // write app.ico
+        // write app.ico with multiple sizes for proper Windows display
         using (FileStream fs = File.Create("app.ico")) {
-            // Write ICO header
             using (BinaryWriter bw = new BinaryWriter(fs)) {
+                int[] sizes = new int[] { 256, 128, 64, 48, 32, 24, 16 };
                 bw.Write((ushort)0); // reserved
                 bw.Write((ushort)1); // type = icon
-                bw.Write((ushort)1); // count = 1
+                bw.Write((ushort)sizes.Length); // count
 
-                bw.Write((byte)0);   // width 256 (0 means 256)
-                bw.Write((byte)0);   // height 256
-                bw.Write((byte)0);   // colors
-                bw.Write((byte)0);   // reserved
-                bw.Write((ushort)1); // planes
-                bw.Write((ushort)32); // bpp
+                int currentOffset = 6 + 16 * sizes.Length;
+                System.Collections.Generic.List<byte[]> images = new System.Collections.Generic.List<byte[]>();
 
-                using (MemoryStream pngMs = new MemoryStream()) {
-                    PngBitmapEncoder enc256 = new PngBitmapEncoder();
-                    enc256.Frames.Add(BitmapFrame.Create(scaledImage));
-                    enc256.Save(pngMs);
-                    byte[] pngBytes = pngMs.ToArray();
+                for (int i = 0; i < sizes.Length; i++) {
+                    int s = sizes[i];
+                    var sT = new ScaleTransform(s / 1024.0, s / 1024.0);
+                    var sImg = new TransformedBitmap(rtb, sT);
+                    
+                    using (MemoryStream pngMs = new MemoryStream()) {
+                        PngBitmapEncoder enc = new PngBitmapEncoder();
+                        enc.Frames.Add(BitmapFrame.Create(sImg));
+                        enc.Save(pngMs);
+                        byte[] pngBytes = pngMs.ToArray();
+                        images.Add(pngBytes);
 
-                    bw.Write((uint)pngBytes.Length);
-                    bw.Write((uint)22); // offset
+                        bw.Write((byte)(s == 256 ? 0 : s)); // width
+                        bw.Write((byte)(s == 256 ? 0 : s)); // height
+                        bw.Write((byte)0); // colors
+                        bw.Write((byte)0); // reserved
+                        bw.Write((ushort)1); // planes
+                        bw.Write((ushort)32); // bpp
+                        bw.Write((uint)pngBytes.Length);
+                        bw.Write((uint)currentOffset); // offset
+                        currentOffset += pngBytes.Length;
+                    }
+                }
+                
+                foreach (byte[] pngBytes in images) {
                     bw.Write(pngBytes);
                 }
             }

@@ -39,7 +39,16 @@ namespace RdpLauncher
 
     public class App : System.Windows.Application
     {
-        private const string ICON_B64 = "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";
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+
+        [DllImport("shell32.dll", SetLastError = true)]
+        private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
+
+        private const int WM_SETICON = 0x0080;
+        private const int ICON_SMALL = 0;
+        private const int ICON_BIG = 1;
 
         private Window mainWindow;
         private ComboBox ipBox;
@@ -72,6 +81,7 @@ namespace RdpLauncher
         [STAThread]
         public static void Main()
         {
+            SetCurrentProcessExplicitAppUserModelID("RemoteDesk.RdpLauncher");
             bool res;
             using (System.Threading.Mutex m = new System.Threading.Mutex(true, "RemoteDesk_Mutex_Final", out res))
             {
@@ -118,18 +128,16 @@ namespace RdpLauncher
 
         private void CreateTrayIcon() {
             this.trayIcon = new Forms.NotifyIcon();
-            string exePath = Assembly.GetExecutingAssembly().Location;
-            string dir = System.IO.Path.GetDirectoryName(exePath);
-            string icoPath = System.IO.Path.Combine(dir, "app.ico");
-            if (System.IO.File.Exists(icoPath)) {
-                try { 
-                    Drawing.Icon loadedIcon = new Drawing.Icon(icoPath);
-                    IntPtr h = loadedIcon.Handle; // Will throw here if the icon format is invalid
-                    this.trayIcon.Icon = loadedIcon; 
-                } catch { 
-                    this.trayIcon.Icon = Drawing.SystemIcons.Application; 
+            try {
+                using (Stream rs = Assembly.GetExecutingAssembly().GetManifestResourceStream("RemoteDesk.app_icon.png")) {
+                    if (rs != null) {
+                        Drawing.Bitmap bmp = new Drawing.Bitmap(rs);
+                        this.trayIcon.Icon = Drawing.Icon.FromHandle(bmp.GetHicon());
+                    } else {
+                        this.trayIcon.Icon = Drawing.SystemIcons.Application;
+                    }
                 }
-            } else {
+            } catch {
                 this.trayIcon.Icon = Drawing.SystemIcons.Application;
             }
             this.trayIcon.Text = "Remote Desk";
@@ -145,7 +153,7 @@ namespace RdpLauncher
         private void CreateStickyWindow() {
             this.stickyWindow = new Window();
             this.stickyWindow.Title = "RemoteDesk Mini";
-            this.stickyWindow.Width = 60; this.stickyWindow.Height = 60;
+            this.stickyWindow.Width = 26; this.stickyWindow.Height = 26;
             this.stickyWindow.WindowStyle = WindowStyle.None;
             this.stickyWindow.AllowsTransparency = true;
             this.stickyWindow.Background = System.Windows.Media.Brushes.Transparent;
@@ -153,14 +161,16 @@ namespace RdpLauncher
             this.stickyWindow.ShowInTaskbar = false;
 
             Border ball = new Border();
-            ball.Width = 48; ball.Height = 48;
-            ball.CornerRadius = new CornerRadius(24);
+            ball.Width = 26; ball.Height = 26;
+            ball.CornerRadius = new CornerRadius(13);
             ball.Background = System.Windows.Media.Brushes.Transparent;
             ball.BorderThickness = new Thickness(0);
+            ball.Padding = new Thickness(0);
+            ball.Margin = new Thickness(0);
             ball.Cursor = System.Windows.Input.Cursors.Hand;
-            ball.Effect = new DropShadowEffect() { BlurRadius = 10, ShadowDepth = 0, Opacity = 0.5 };
+            ball.Effect = new DropShadowEffect() { BlurRadius = 5, ShadowDepth = 0, Opacity = 0.5 };
             
-            System.Windows.Controls.Image icon = new System.Windows.Controls.Image(); icon.Source = this.CreateSvgDrawing(System.Windows.Media.Color.FromRgb(2, 248, 233)); icon.Width = 40; icon.Height = 40;
+            System.Windows.Controls.Image icon = new System.Windows.Controls.Image(); icon.Source = this.CreateSvgDrawing(System.Windows.Media.Color.FromRgb(2, 248, 233)); icon.Width = 26; icon.Height = 26; icon.Margin = new Thickness(0);
             ball.Child = icon;
             this.stickyWindow.Content = ball;
 
@@ -223,7 +233,7 @@ namespace RdpLauncher
 
             double screenW = SystemParameters.PrimaryScreenWidth;
             double screenH = SystemParameters.PrimaryScreenHeight;
-            this.stickyWindow.Left = screenW - 80;
+            this.stickyWindow.Left = screenW - this.stickyWindow.Width;
             this.stickyWindow.Top = screenH - 150;
             this.stickyWindow.Hide();
         }
@@ -246,7 +256,7 @@ namespace RdpLauncher
         {
             this.mainWindow = new Window();
             this.mainWindow.Title = "Remote Desk RDP Launcher";
-            try { this.mainWindow.Icon = this.GetImg(ICON_B64); } catch { }
+            this.mainWindow.SourceInitialized += new EventHandler(this.OnSourceInitialized);
             this.mainWindow.Width = 400;
             this.mainWindow.Height = 760;
             this.mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -403,6 +413,37 @@ namespace RdpLauncher
             this.mainWindow.Show();
         }
 
+        private void OnSourceInitialized(object sender, EventArgs e) {
+            this.SetWindowIconViaWin32();
+        }
+
+        private void SetWindowIconViaWin32() {
+            try {
+                IntPtr hwnd = new WindowInteropHelper(this.mainWindow).Handle;
+                if (hwnd == IntPtr.Zero) return;
+
+                // Load icon from embedded PNG resource and create HICON
+                using (Stream rs = Assembly.GetExecutingAssembly().GetManifestResourceStream("RemoteDesk.app_icon.png")) {
+                    if (rs == null) return;
+                    Drawing.Bitmap bmp = new Drawing.Bitmap(rs);
+
+                    // Big icon for taskbar (use original size, Windows will scale)
+                    IntPtr hIconBig = bmp.GetHicon();
+                    SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_BIG, hIconBig);
+
+                    // Small icon for title bar
+                    using (Drawing.Bitmap smallBmp = new Drawing.Bitmap(bmp, 16, 16)) {
+                        IntPtr hIconSmall = smallBmp.GetHicon();
+                        SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_SMALL, hIconSmall);
+                    }
+
+                    // Also set WPF layer icon
+                    this.mainWindow.Icon = Imaging.CreateBitmapSourceFromHIcon(
+                        hIconBig, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                }
+            } catch { }
+        }
+
         private void OnAvatarClick(object s, MouseButtonEventArgs ev) { this.UploadAvatarClick(s, ev); }
         private void OnShareClick(object s, MouseButtonEventArgs ev) {
             string h = this.ipBox.Text.Trim();
@@ -412,19 +453,6 @@ namespace RdpLauncher
         private void OnConnectClick(object s, RoutedEventArgs ev) { this.StartConnection(); }
         private void OnStatusTick(object s, EventArgs ev) { this.UpdateConnectionStatus(); }
 
-        private BitmapSource GetImg(string b) { 
-            try { 
-                using (Stream rs = Assembly.GetExecutingAssembly().GetManifestResourceStream("RemoteDesk.app_icon.png")) {
-                    if (rs != null) {
-                        BitmapImage i = new BitmapImage(); i.BeginInit(); i.StreamSource = rs; i.CacheOption = BitmapCacheOption.OnLoad; i.EndInit(); return i; 
-                    }
-                }
-                byte[] data = Convert.FromBase64String(b); 
-                using (MemoryStream ms = new MemoryStream(data)) {
-                    BitmapImage i = new BitmapImage(); i.BeginInit(); i.StreamSource = ms; i.CacheOption = BitmapCacheOption.OnLoad; i.EndInit(); return i; 
-                }
-            } catch { return null; } 
-        }
 
         private void UpdateThemeColor() {
             try {
