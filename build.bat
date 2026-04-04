@@ -9,7 +9,7 @@ if not exist "%CSC_PATH%" (
 )
 
 echo Compiling RdpLauncher.cs...
-"%CSC_PATH%" /t:winexe /win32icon:app.ico /out:RdpLauncher.exe RdpLauncher.cs /lib:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF" /r:PresentationCore.dll /r:PresentationFramework.dll /r:WindowsBase.dll /r:System.Xaml.dll /r:System.Runtime.Serialization.dll /r:System.Security.dll /r:System.Windows.Forms.dll /resource:avatar.png,RemoteDesk.avatar.png /resource:app_icon.png,RemoteDesk.app_icon.png
+"%CSC_PATH%" /t:winexe /win32icon:app.ico /out:RdpLauncher.exe RdpLauncher.cs /lib:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF" /r:PresentationCore.dll /r:PresentationFramework.dll /r:WindowsBase.dll /r:System.Xaml.dll /r:System.Runtime.Serialization.dll /r:System.Security.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll /resource:avatar.png,RemoteDesk.avatar.png /resource:app_icon.png,RemoteDesk.app_icon.png
 
 if %ERRORLEVEL% EQU 0 (
     echo.

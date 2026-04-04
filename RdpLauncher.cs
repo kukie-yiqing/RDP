@@ -17,6 +17,10 @@ using System.Windows.Threading;
 using System.Security.Cryptography;
 using System.Text;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
+using Drawing = System.Drawing;
+using Forms = System.Windows.Forms;
 
 namespace RdpLauncher
 {
@@ -33,20 +37,20 @@ namespace RdpLauncher
         public override string ToString() { return this.Host; }
     }
 
-    public class App : Application
+    public class App : System.Windows.Application
     {
-        private const string ICON_B64 = "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";
+        private const string ICON_B64 = "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";
 
         private Window mainWindow;
         private ComboBox ipBox;
-        private TextBox userBox;
+        private System.Windows.Controls.TextBox userBox;
         private PasswordBox passBox;
         private ComboBox displayModeBox;
         private ComboBox resolutionBox;
         private ComboBox colorDepthBox;
         private Grid rootGrid;
         private StackPanel mainStack;
-        private Button connectBtn;
+        private System.Windows.Controls.Button connectBtn;
         private Ellipse avatarCircle;
         private Border guideBox;
         private Border shareIcon;
@@ -62,6 +66,8 @@ namespace RdpLauncher
         private DispatcherTimer themeTimer;
         private bool isConnecting = false;
         private bool isAutoFilling = false;
+        private Forms.NotifyIcon trayIcon;
+        private Window stickyWindow;
 
         [STAThread]
         public static void Main()
@@ -90,7 +96,7 @@ namespace RdpLauncher
 
         private void OnException(object s, DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show("Error: " + e.Exception.Message);
+            System.Windows.MessageBox.Show("Error: " + e.Exception.Message);
             e.Handled = true;
         }
 
@@ -99,6 +105,8 @@ namespace RdpLauncher
             base.OnStartup(e);
             this.LoadConnections();
             this.CreateUI();
+            this.CreateTrayIcon();
+            this.CreateStickyWindow();
             this.themeTimer = new DispatcherTimer();
             this.themeTimer.Interval = TimeSpan.FromSeconds(1.5);
             this.themeTimer.Tick += new EventHandler(OnThemeTick);
@@ -108,16 +116,148 @@ namespace RdpLauncher
 
         private void OnThemeTick(object s, EventArgs ev) { this.UpdateThemeColor(); }
 
+        private void CreateTrayIcon() {
+            this.trayIcon = new Forms.NotifyIcon();
+            string exePath = Assembly.GetExecutingAssembly().Location;
+            string dir = System.IO.Path.GetDirectoryName(exePath);
+            string icoPath = System.IO.Path.Combine(dir, "app.ico");
+            if (System.IO.File.Exists(icoPath)) {
+                try { 
+                    Drawing.Icon loadedIcon = new Drawing.Icon(icoPath);
+                    IntPtr h = loadedIcon.Handle; // Will throw here if the icon format is invalid
+                    this.trayIcon.Icon = loadedIcon; 
+                } catch { 
+                    this.trayIcon.Icon = Drawing.SystemIcons.Application; 
+                }
+            } else {
+                this.trayIcon.Icon = Drawing.SystemIcons.Application;
+            }
+            this.trayIcon.Text = "Remote Desk";
+            try { this.trayIcon.Visible = true; } catch { }
+            this.trayIcon.DoubleClick += (s, e) => { this.RestoreMainWindow(); };
+            
+            Forms.ContextMenuStrip menu = new Forms.ContextMenuStrip();
+            menu.Items.Add("打开主界面", null, (s, e) => { this.RestoreMainWindow(); });
+            menu.Items.Add("退出", null, (s, e) => { Forms.Application.Exit(); Environment.Exit(0); });
+            this.trayIcon.ContextMenuStrip = menu;
+        }
+
+        private void CreateStickyWindow() {
+            this.stickyWindow = new Window();
+            this.stickyWindow.Title = "RemoteDesk Mini";
+            this.stickyWindow.Width = 60; this.stickyWindow.Height = 60;
+            this.stickyWindow.WindowStyle = WindowStyle.None;
+            this.stickyWindow.AllowsTransparency = true;
+            this.stickyWindow.Background = System.Windows.Media.Brushes.Transparent;
+            this.stickyWindow.Topmost = true;
+            this.stickyWindow.ShowInTaskbar = false;
+
+            Border ball = new Border();
+            ball.Width = 48; ball.Height = 48;
+            ball.CornerRadius = new CornerRadius(24);
+            ball.Background = System.Windows.Media.Brushes.Transparent;
+            ball.BorderThickness = new Thickness(0);
+            ball.Cursor = System.Windows.Input.Cursors.Hand;
+            ball.Effect = new DropShadowEffect() { BlurRadius = 10, ShadowDepth = 0, Opacity = 0.5 };
+            
+            System.Windows.Controls.Image icon = new System.Windows.Controls.Image(); icon.Source = this.CreateSvgDrawing(System.Windows.Media.Color.FromRgb(2, 248, 233)); icon.Width = 40; icon.Height = 40;
+            ball.Child = icon;
+            this.stickyWindow.Content = ball;
+
+            ball.MouseLeftButtonDown += (s, e) => { 
+                if (e.ClickCount == 2) this.RestoreMainWindow(); 
+                else {
+                    this.stickyWindow.DragMove();
+                    double curLeft = this.stickyWindow.Left + this.stickyWindow.Width / 2;
+                    double screenMid = SystemParameters.PrimaryScreenWidth / 2;
+                    this.stickyWindow.Left = curLeft < screenMid ? 0 : SystemParameters.PrimaryScreenWidth - this.stickyWindow.Width;
+                }
+            };
+            
+            System.Windows.Controls.Primitives.Popup popup = new System.Windows.Controls.Primitives.Popup();
+            popup.StaysOpen = true;
+            popup.AllowsTransparency = true;
+            popup.PlacementTarget = ball;
+            popup.Placement = System.Windows.Controls.Primitives.PlacementMode.Left;
+            popup.HorizontalOffset = -5;
+
+            Border popupBorder = new Border();
+            popupBorder.SetResourceReference(Border.BackgroundProperty, "PopupBg");
+            popupBorder.SetResourceReference(Border.BorderBrushProperty, "PopupBorder");
+            popupBorder.BorderThickness = new Thickness(1);
+            popupBorder.CornerRadius = new CornerRadius(5);
+            popupBorder.Padding = new Thickness(10);
+            popupBorder.Effect = new DropShadowEffect() { BlurRadius = 10, ShadowDepth = 0, Opacity = 0.2 };
+
+            StackPanel ttp = new StackPanel() { Margin = new Thickness(0) };
+            
+            this.CreateLabelInPanel(ttp, "快速模式");
+            ComboBox miniMode = new ComboBox() { Width = 150, Margin = new Thickness(0, 0, 0, 5) };
+            miniMode.Items.Add("📺 全部显示器"); miniMode.Items.Add("🖥️ 仅主显示器"); miniMode.Items.Add("💻 仅副显示器");
+            miniMode.SelectedIndex = 0;
+            miniMode.SelectionChanged += (s, e) => { if (this.displayModeBox != null) this.displayModeBox.SelectedIndex = miniMode.SelectedIndex; };
+            ttp.Children.Add(miniMode);
+
+            System.Windows.Controls.Button reconnect = new System.Windows.Controls.Button() { Content = "重新连接", Height = 28 };
+            reconnect.Click += (s, e) => { this.StartConnection(); popup.IsOpen = false; };
+            ttp.Children.Add(reconnect);
+
+            System.Windows.Controls.Button restore = new System.Windows.Controls.Button() { Content = "返回界面", Height = 28, Margin = new Thickness(0, 5, 0, 0) };
+            restore.Click += (s, e) => { this.RestoreMainWindow(); popup.IsOpen = false; };
+            ttp.Children.Add(restore);
+
+            popupBorder.Child = ttp;
+            popup.Child = popupBorder;
+
+            DispatcherTimer closeTimer = new DispatcherTimer();
+            closeTimer.Interval = TimeSpan.FromMilliseconds(400);
+            closeTimer.Tick += (s, e) => {
+                closeTimer.Stop();
+                if (!ball.IsMouseOver && !popupBorder.IsMouseOver) popup.IsOpen = false;
+            };
+
+            ball.MouseEnter += (s, e) => { closeTimer.Stop(); popup.IsOpen = true; };
+            ball.MouseLeave += (s, e) => { closeTimer.Start(); };
+            popupBorder.MouseEnter += (s, e) => { closeTimer.Stop(); };
+            popupBorder.MouseLeave += (s, e) => { closeTimer.Start(); };
+
+            double screenW = SystemParameters.PrimaryScreenWidth;
+            double screenH = SystemParameters.PrimaryScreenHeight;
+            this.stickyWindow.Left = screenW - 80;
+            this.stickyWindow.Top = screenH - 150;
+            this.stickyWindow.Hide();
+        }
+
+        private void CreateLabelInPanel(StackPanel p, string t) {
+            TextBlock tb = new TextBlock() { Text = t, Margin = new Thickness(0, 0, 0, 5), FontWeight = FontWeights.Bold };
+            p.Children.Add(tb);
+        }
+
+        private void RestoreMainWindow() {
+            if (this.mainWindow != null) {
+                this.mainWindow.Visibility = Visibility.Visible;
+                this.mainWindow.WindowState = WindowState.Normal;
+                this.mainWindow.Activate();
+                if (this.stickyWindow != null) this.stickyWindow.Hide();
+            }
+        }
+
         private void CreateUI()
         {
             this.mainWindow = new Window();
             this.mainWindow.Title = "Remote Desk RDP Launcher";
+            try { this.mainWindow.Icon = this.GetImg(ICON_B64); } catch { }
             this.mainWindow.Width = 400;
             this.mainWindow.Height = 760;
             this.mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             this.mainWindow.ResizeMode = ResizeMode.CanMinimize;
-            this.mainWindow.FontFamily = new FontFamily("Segoe UI");
-            this.mainWindow.Icon = this.GetImg(ICON_B64);
+            this.mainWindow.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+            
+            this.mainWindow.Closing += (s, e) => {
+                e.Cancel = true;
+                this.mainWindow.Visibility = Visibility.Collapsed;
+                if (this.stickyWindow != null) this.stickyWindow.Show();
+            };
 
             this.rootGrid = new Grid();
             this.mainWindow.Content = this.rootGrid;
@@ -130,8 +270,8 @@ namespace RdpLauncher
             this.avatarCircle.Width = 70;
             this.avatarCircle.Height = 70;
             this.avatarCircle.Margin = new Thickness(0, 15, 0, 10);
-            this.avatarCircle.HorizontalAlignment = HorizontalAlignment.Center;
-            this.avatarCircle.Cursor = Cursors.Hand;
+            this.avatarCircle.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
+            this.avatarCircle.Cursor = System.Windows.Input.Cursors.Hand;
             this.avatarCircle.StrokeThickness = 2;
             
             DropShadowEffect shadow = new DropShadowEffect();
@@ -143,8 +283,8 @@ namespace RdpLauncher
             this.mainStack.Children.Add(this.avatarCircle);
 
             StackPanel hv = new StackPanel();
-            hv.Orientation = Orientation.Horizontal;
-            hv.HorizontalAlignment = HorizontalAlignment.Center;
+            hv.Orientation = System.Windows.Controls.Orientation.Horizontal;
+            hv.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
             hv.Margin = new Thickness(0, 5, 0, 3);
             this.mainStack.Children.Add(hv);
 
@@ -152,15 +292,15 @@ namespace RdpLauncher
             this.guideBox.Width = 26; this.guideBox.Height = 26;
             this.guideBox.CornerRadius = new CornerRadius(6);
             this.guideBox.BorderThickness = new Thickness(1);
-            this.guideBox.BorderBrush = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128));
-            this.guideBox.Background = Brushes.Transparent;
-            this.guideBox.Cursor = Cursors.Hand;
+            this.guideBox.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 128, 128, 128));
+            this.guideBox.Background = System.Windows.Media.Brushes.Transparent;
+            this.guideBox.Cursor = System.Windows.Input.Cursors.Hand;
             this.guideBox.ToolTip = "打开配置目录";
             this.guideBox.MouseLeftButtonDown += (s, e) => { try { Process.Start("explorer.exe", this.configDir); } catch { } };
-            this.guideBox.MouseEnter += (s, e) => { this.guideBox.Background = new SolidColorBrush(Color.FromArgb(30, 0, 229, 255)); this.guideBox.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 0, 229, 255)); };
-            this.guideBox.MouseLeave += (s, e) => { this.guideBox.Background = Brushes.Transparent; this.guideBox.BorderBrush = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128)); };
+            this.guideBox.MouseEnter += (s, e) => { this.guideBox.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 0, 229, 255)); this.guideBox.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 0, 229, 255)); };
+            this.guideBox.MouseLeave += (s, e) => { this.guideBox.Background = System.Windows.Media.Brushes.Transparent; this.guideBox.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 128, 128, 128)); };
             
-            Image gImg = new Image(); gImg.Source = this.GetImg(ICON_B64); gImg.Width = 16; gImg.Height = 16;
+            System.Windows.Controls.Image gImg = new System.Windows.Controls.Image(); gImg.Source = this.CreateSvgDrawing(System.Windows.Media.Color.FromRgb(2, 248, 233)); gImg.Width = 16; gImg.Height = 16;
             this.guideBox.Child = gImg;
             hv.Children.Add(this.guideBox);
 
@@ -177,17 +317,17 @@ namespace RdpLauncher
             this.shareIcon.Width = 26; this.shareIcon.Height = 26;
             this.shareIcon.CornerRadius = new CornerRadius(6);
             this.shareIcon.BorderThickness = new Thickness(1);
-            this.shareIcon.BorderBrush = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128));
-            this.shareIcon.Background = Brushes.Transparent; 
-            this.shareIcon.Cursor = Cursors.Hand;
+            this.shareIcon.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 128, 128, 128));
+            this.shareIcon.Background = System.Windows.Media.Brushes.Transparent; 
+            this.shareIcon.Cursor = System.Windows.Input.Cursors.Hand;
             this.shareIcon.ToolTip = "打开共享文件夹 (\\ip)";
             this.shareIcon.MouseLeftButtonDown += new MouseButtonEventHandler(this.OnShareClick);
-            this.shareIcon.MouseEnter += (s, ev) => { this.shareIcon.Background = new SolidColorBrush(Color.FromArgb(30, 0, 229, 255)); this.shareIcon.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 0, 229, 255)); };
-            this.shareIcon.MouseLeave += (s, ev) => { this.shareIcon.Background = Brushes.Transparent; this.shareIcon.BorderBrush = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128)); };
+            this.shareIcon.MouseEnter += (s, ev) => { this.shareIcon.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 0, 229, 255)); this.shareIcon.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 0, 229, 255)); };
+            this.shareIcon.MouseLeave += (s, ev) => { this.shareIcon.Background = System.Windows.Media.Brushes.Transparent; this.shareIcon.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 128, 128, 128)); };
 
             System.Windows.Shapes.Path sPath = new System.Windows.Shapes.Path();
             sPath.Data = Geometry.Parse("M19,10 L5,10 L9,6 M5,10 L9,14 M5,18 L19,18 L15,14 M19,18 L15,22");
-            sPath.Stroke = new SolidColorBrush(Color.FromRgb(0, 229, 255)); 
+            sPath.Stroke = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 229, 255)); 
             sPath.StrokeThickness = 2.2;
             sPath.StrokeStartLineCap = PenLineCap.Round; sPath.StrokeEndLineCap = PenLineCap.Round;
             
@@ -199,7 +339,7 @@ namespace RdpLauncher
             this.subTitleTb.Text = "极速、一键直连远程桌面";
             this.subTitleTb.FontSize = 11;
             this.subTitleTb.Margin = new Thickness(0, -2, 0, 8);
-            this.subTitleTb.HorizontalAlignment = HorizontalAlignment.Center;
+            this.subTitleTb.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
             this.labels.Add(this.subTitleTb);
             this.mainStack.Children.Add(this.subTitleTb);
 
@@ -212,7 +352,7 @@ namespace RdpLauncher
             pb.CornerRadius = new CornerRadius(6); pb.BorderThickness = new Thickness(1.2); pb.Height = 36; pb.Padding = new Thickness(8, 0, 8, 0); pb.Margin = new Thickness(0, 0, 0, 10);
             this.fieldsBorders.Add(pb);
             this.passBox = new PasswordBox();
-            this.passBox.Background = Brushes.Transparent; this.passBox.BorderThickness = new Thickness(0); this.passBox.VerticalContentAlignment = VerticalAlignment.Center;
+            this.passBox.Background = System.Windows.Media.Brushes.Transparent; this.passBox.BorderThickness = new Thickness(0); this.passBox.VerticalContentAlignment = VerticalAlignment.Center;
             pb.Child = this.passBox; this.mainStack.Children.Add(pb);
 
             this.CreateLabel(this.mainStack, "显示模式");
@@ -221,7 +361,7 @@ namespace RdpLauncher
             this.fieldsBorders.Add(mb);
             this.displayModeBox = new ComboBox();
             this.displayModeBox.Style = this.GetModernComboStyle();
-            this.displayModeBox.IsEditable = true; this.displayModeBox.IsReadOnly = true; this.displayModeBox.Background = Brushes.Transparent; this.displayModeBox.BorderThickness = new Thickness(0); this.displayModeBox.VerticalContentAlignment = VerticalAlignment.Center; this.displayModeBox.FontSize = 14;
+            this.displayModeBox.IsEditable = true; this.displayModeBox.IsReadOnly = true; this.displayModeBox.Background = System.Windows.Media.Brushes.Transparent; this.displayModeBox.BorderThickness = new Thickness(0); this.displayModeBox.VerticalContentAlignment = VerticalAlignment.Center; this.displayModeBox.FontSize = 14;
             this.displayModeBox.ItemContainerStyle = this.GetComboItemStyle();
             this.displayModeBox.Items.Add("📺 全部显示器"); this.displayModeBox.Items.Add("🖥️ 仅主显示器"); this.displayModeBox.Items.Add("💻 仅副显示器"); this.displayModeBox.SelectedIndex = 0;
             mb.Child = this.displayModeBox; this.mainStack.Children.Add(mb);
@@ -232,9 +372,9 @@ namespace RdpLauncher
             this.fieldsBorders.Add(rb);
             this.resolutionBox = new ComboBox();
             this.resolutionBox.Style = this.GetModernComboStyle();
-            this.resolutionBox.IsEditable = true; this.resolutionBox.IsReadOnly = true; this.resolutionBox.Background = Brushes.Transparent; this.resolutionBox.BorderThickness = new Thickness(0); this.resolutionBox.VerticalContentAlignment = VerticalAlignment.Center; this.resolutionBox.FontSize = 14;
+            this.resolutionBox.IsEditable = true; this.resolutionBox.IsReadOnly = true; this.resolutionBox.Background = System.Windows.Media.Brushes.Transparent; this.resolutionBox.BorderThickness = new Thickness(0); this.resolutionBox.VerticalContentAlignment = VerticalAlignment.Center; this.resolutionBox.FontSize = 14;
             this.resolutionBox.ItemContainerStyle = this.GetComboItemStyle();
-            this.resolutionBox.Items.Add("🔲 自适应全屏"); this.resolutionBox.Items.Add("🔲 3840 x 2160 (4K)"); this.resolutionBox.Items.Add("🔲 2560 x 1440 (2K)"); this.resolutionBox.Items.Add("🔲 1920 x 1080"); this.resolutionBox.Items.Add("🔲 1366 x 768"); this.resolutionBox.Items.Add("🔲 1280 x 720"); this.resolutionBox.Items.Add("🔲 1024 x 768"); this.resolutionBox.SelectedIndex = 0;
+            this.resolutionBox.Items.Add("📐 自适应全屏"); this.resolutionBox.Items.Add("📐 3840 x 2160 (4K)"); this.resolutionBox.Items.Add("📐 2560 x 1440 (2K)"); this.resolutionBox.Items.Add("📐 1920 x 1080"); this.resolutionBox.Items.Add("📐 1366 x 768"); this.resolutionBox.Items.Add("📐 1280 x 720"); this.resolutionBox.Items.Add("📐 1024 x 768"); this.resolutionBox.SelectedIndex = 0;
             rb.Child = this.resolutionBox; this.mainStack.Children.Add(rb);
 
             this.CreateLabel(this.mainStack, "色彩深度");
@@ -243,14 +383,14 @@ namespace RdpLauncher
             this.fieldsBorders.Add(cb);
             this.colorDepthBox = new ComboBox();
             this.colorDepthBox.Style = this.GetModernComboStyle();
-            this.colorDepthBox.IsEditable = true; this.colorDepthBox.IsReadOnly = true; this.colorDepthBox.Background = Brushes.Transparent; this.colorDepthBox.BorderThickness = new Thickness(0); this.colorDepthBox.VerticalContentAlignment = VerticalAlignment.Center; this.colorDepthBox.FontSize = 14;
+            this.colorDepthBox.IsEditable = true; this.colorDepthBox.IsReadOnly = true; this.colorDepthBox.Background = System.Windows.Media.Brushes.Transparent; this.colorDepthBox.BorderThickness = new Thickness(0); this.colorDepthBox.VerticalContentAlignment = VerticalAlignment.Center; this.colorDepthBox.FontSize = 14;
             this.colorDepthBox.ItemContainerStyle = this.GetComboItemStyle();
             this.colorDepthBox.Items.Add("🔴 最高质量 (32位)"); this.colorDepthBox.Items.Add("🟢 真彩色 (24位)"); this.colorDepthBox.Items.Add("🔵 增强色 (16位)"); this.colorDepthBox.SelectedIndex = 0;
             cb.Child = this.colorDepthBox; this.mainStack.Children.Add(cb);
             
-            this.connectBtn = new Button();
+            this.connectBtn = new System.Windows.Controls.Button();
             this.connectBtn.Content = "立 即 连 接";
-            this.connectBtn.Height = 44; this.connectBtn.Margin = new Thickness(0, 10, 0, 10); this.connectBtn.Foreground = Brushes.White; this.connectBtn.FontSize = 16; this.connectBtn.FontWeight = FontWeights.Bold; this.connectBtn.Cursor = Cursors.Hand;
+            this.connectBtn.Height = 44; this.connectBtn.Margin = new Thickness(0, 10, 0, 10); this.connectBtn.Foreground = System.Windows.Media.Brushes.White; this.connectBtn.FontSize = 16; this.connectBtn.FontWeight = FontWeights.Bold; this.connectBtn.Cursor = System.Windows.Input.Cursors.Hand;
             this.connectBtn.Click += new RoutedEventHandler(OnConnectClick);
             this.connectBtn.Style = this.CreateButtonStyle();
             DropShadowEffect btnShadow = new DropShadowEffect(); btnShadow.BlurRadius = 15; btnShadow.ShadowDepth = 3; btnShadow.Opacity = 0.4; btnShadow.Color = Colors.Black;
@@ -274,6 +414,11 @@ namespace RdpLauncher
 
         private BitmapSource GetImg(string b) { 
             try { 
+                using (Stream rs = Assembly.GetExecutingAssembly().GetManifestResourceStream("RemoteDesk.app_icon.png")) {
+                    if (rs != null) {
+                        BitmapImage i = new BitmapImage(); i.BeginInit(); i.StreamSource = rs; i.CacheOption = BitmapCacheOption.OnLoad; i.EndInit(); return i; 
+                    }
+                }
                 byte[] data = Convert.FromBase64String(b); 
                 using (MemoryStream ms = new MemoryStream(data)) {
                     BitmapImage i = new BitmapImage(); i.BeginInit(); i.StreamSource = ms; i.CacheOption = BitmapCacheOption.OnLoad; i.EndInit(); return i; 
@@ -283,18 +428,20 @@ namespace RdpLauncher
 
         private void UpdateThemeColor() {
             try {
-                Color a = this.GetAccent(); bool d = !this.IsLight(); Brush ab = new SolidColorBrush(a);
-                if (this.mainWindow != null) { if (d) this.mainWindow.Background = new SolidColorBrush(Color.FromRgb(20, 20, 22)); else this.mainWindow.Background = new SolidColorBrush(Color.FromRgb(243, 243, 245)); }
+                Drawing.Color a = this.GetAccentColor(); bool d = !this.IsLight(); 
+                System.Windows.Media.Color wColor = System.Windows.Media.Color.FromArgb(a.A, a.R, a.G, a.B);
+                Brush ab = new SolidColorBrush(wColor);
+                if (this.mainWindow != null) { if (d) this.mainWindow.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(20, 20, 22)); else this.mainWindow.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(243, 243, 245)); }
                 if (this.labels != null) { foreach (TextBlock tb in this.labels) tb.Foreground = ab; }
                 if (this.fieldsBorders != null) { 
                     foreach (Border b in this.fieldsBorders) { 
-                        if (d) b.Background = new SolidColorBrush(Color.FromRgb(35, 35, 40)); else b.Background = Brushes.White; 
-                        if (d) b.BorderBrush = new SolidColorBrush(Color.FromRgb(50, 50, 60)); else b.BorderBrush = new SolidColorBrush(Color.FromRgb(200, 200, 200)); 
+                        if (d) b.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(35, 35, 40)); else b.Background = System.Windows.Media.Brushes.White; 
+                        if (d) b.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(50, 50, 60)); else b.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(200, 200, 200)); 
                     } 
                 }
-                if (Application.Current != null) {
-                    Application.Current.Resources["PopupBg"] = d ? new SolidColorBrush(Color.FromRgb(35, 35, 40)) : Brushes.White;
-                    Application.Current.Resources["PopupBorder"] = d ? new SolidColorBrush(Color.FromRgb(50, 50, 60)) : new SolidColorBrush(Color.FromRgb(220, 220, 220));
+                if (System.Windows.Application.Current != null) {
+                    System.Windows.Application.Current.Resources["PopupBg"] = d ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(35, 35, 40)) : System.Windows.Media.Brushes.White;
+                    System.Windows.Application.Current.Resources["PopupBorder"] = d ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(50, 50, 60)) : new SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 220, 220));
                 }
                 if (this.ipBox != null) this.ipBox.Foreground = ab; 
                 if (this.userBox != null) this.userBox.Foreground = ab;
@@ -302,27 +449,31 @@ namespace RdpLauncher
                 if (this.displayModeBox != null) this.displayModeBox.Foreground = ab;
                 if (this.resolutionBox != null) this.resolutionBox.Foreground = ab;
                 if (this.colorDepthBox != null) this.colorDepthBox.Foreground = ab;
-                LinearGradientBrush grad = new LinearGradientBrush(); grad.GradientStops.Add(new GradientStop(a, 0.0)); grad.GradientStops.Add(new GradientStop(Color.FromRgb((byte)Math.Min(255, a.R+40), (byte)Math.Min(255, a.G+40), (byte)Math.Min(255, a.B+40)), 1.0));
+                LinearGradientBrush grad = new LinearGradientBrush(); grad.GradientStops.Add(new GradientStop(wColor, 0.0)); grad.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromRgb((byte)Math.Min(255, wColor.R+40), (byte)Math.Min(255, wColor.G+40), (byte)Math.Min(255, wColor.B+40)), 1.0));
                 if (this.connectBtn != null) this.connectBtn.Background = grad; 
                 if (this.avatarCircle != null) this.avatarCircle.Stroke = ab;
             } catch {}
         }
 
         private bool IsLight() { try { object v = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1); return v != null && (int)v == 1; } catch { return false; } }
-        private Color GetAccent() { object v = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM", "AccentColor", null); if (v is int) { int abgr = (int)v; return Color.FromRgb((byte)(abgr & 0xFF), (byte)((abgr >> 8) & 0xFF), (byte)((abgr >> 16) & 0xFF)); } return Color.FromRgb(0, 120, 215); }
+        private Drawing.Color GetAccentColor() { 
+            object v = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM", "AccentColor", null); 
+            if (v is int) { int abgr = (int)v; return Drawing.Color.FromArgb((byte)(abgr & 0xFF), (byte)((abgr >> 8) & 0xFF), (byte)((abgr >> 16) & 0xFF)); } 
+            return Drawing.Color.FromArgb(0, 120, 215); 
+        }
 
         private void CreateLabel(StackPanel p, string t) { TextBlock tb = new TextBlock(); tb.Text = t; tb.Margin = new Thickness(0, 5, 0, 5); tb.FontWeight = FontWeights.SemiBold; tb.FontSize = 14; this.labels.Add(tb); p.Children.Add(tb); }
 
-        private TextBox CreateModernField(StackPanel p, string l) { 
+        private System.Windows.Controls.TextBox CreateModernField(StackPanel p, string l) { 
             this.CreateLabel(p, l); 
             Border h = new Border(); h.CornerRadius = new CornerRadius(6); h.BorderThickness = new Thickness(1.2); h.Height = 36; h.Padding = new Thickness(10, 0, 10, 0); h.Margin = new Thickness(0, 0, 0, 10); this.fieldsBorders.Add(h); 
-            TextBox box = new TextBox(); box.Background = Brushes.Transparent; box.BorderThickness = new Thickness(0); box.VerticalContentAlignment = VerticalAlignment.Center; box.FontSize = 14; h.Child = box; p.Children.Add(h); return box; 
+            System.Windows.Controls.TextBox box = new System.Windows.Controls.TextBox(); box.Background = System.Windows.Media.Brushes.Transparent; box.BorderThickness = new Thickness(0); box.VerticalContentAlignment = VerticalAlignment.Center; box.FontSize = 14; h.Child = box; p.Children.Add(h); return box; 
         }
 
         private ComboBox CreateModernDropdown(StackPanel p, string l) { 
             this.CreateLabel(p, l); 
             Border bh = new Border(); bh.CornerRadius = new CornerRadius(6); bh.BorderThickness = new Thickness(1.2); bh.Height = 36; bh.Padding = new Thickness(0); bh.Margin = new Thickness(0, 0, 0, 10); this.fieldsBorders.Add(bh); 
-            ComboBox box = new ComboBox(); box.IsEditable = true; box.Background = Brushes.Transparent; box.BorderThickness = new Thickness(0); box.VerticalContentAlignment = VerticalAlignment.Center; box.FontSize = 14; box.ItemsSource = this.connections; box.ItemTemplate = this.CreateItemTemplate(); 
+            ComboBox box = new ComboBox(); box.IsEditable = true; box.Background = System.Windows.Media.Brushes.Transparent; box.BorderThickness = new Thickness(0); box.VerticalContentAlignment = VerticalAlignment.Center; box.FontSize = 14; box.ItemsSource = this.connections; box.ItemTemplate = this.CreateItemTemplate(); 
             box.ItemContainerStyle = this.GetComboItemStyle(); box.Style = this.GetModernComboStyle();
             System.Windows.Controls.TextSearch.SetTextPath(box, "Host"); 
             box.SelectionChanged += new SelectionChangedEventHandler(OnIpChanged); 
@@ -361,7 +512,7 @@ namespace RdpLauncher
                 this.resolutionBox.SelectedIndex = en.ResolutionIndex;
                 this.colorDepthBox.SelectedIndex = en.ColorDepthIndex;
                 this.isAutoFilling = false;
-                if (Application.Current != null) Application.Current.Dispatcher.BeginInvoke(new Action(() => { 
+                if (System.Windows.Application.Current != null) System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => { 
                     this.isAutoFilling = true;
                     box.Text = en.Host; 
                     this.isAutoFilling = false;
@@ -408,7 +559,7 @@ namespace RdpLauncher
         private Style GetComboItemStyle() {
             Style s = new Style(typeof(ComboBoxItem));
             s.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(10, 8, 10, 8)));
-            s.Setters.Add(new Setter(FrameworkElement.CursorProperty, Cursors.Hand));
+            s.Setters.Add(new Setter(FrameworkElement.CursorProperty, System.Windows.Input.Cursors.Hand));
             return s;
         }
 
@@ -419,27 +570,27 @@ namespace RdpLauncher
             dp.SetValue(FrameworkElement.WidthProperty, 300.0); 
             t.VisualTree = dp; 
             
-            FrameworkElementFactory btn = new FrameworkElementFactory(typeof(Button)); 
-            btn.SetValue(DockPanel.DockProperty, Dock.Right); 
-            btn.SetValue(Button.ContentProperty, "✕"); 
-            btn.SetValue(Button.ForegroundProperty, Brushes.Gray);
-            btn.SetValue(Button.CursorProperty, Cursors.Hand);
-            btn.SetValue(Button.ToolTipProperty, "移除此记录");
+            FrameworkElementFactory btn = new FrameworkElementFactory(typeof(System.Windows.Controls.Button)); 
+            btn.SetValue(DockPanel.DockProperty, System.Windows.Controls.Dock.Right); 
+            btn.SetValue(System.Windows.Controls.Button.ContentProperty, "✕"); 
+            btn.SetValue(System.Windows.Controls.Button.ForegroundProperty, System.Windows.Media.Brushes.Gray);
+            btn.SetValue(System.Windows.Controls.Button.CursorProperty, System.Windows.Input.Cursors.Hand);
+            btn.SetValue(System.Windows.Controls.Button.ToolTipProperty, "移除此记录");
             
-            Style flatBtnStyle = new Style(typeof(Button)); 
-            ControlTemplate ft = new ControlTemplate(typeof(Button)); 
+            Style flatBtnStyle = new Style(typeof(System.Windows.Controls.Button)); 
+            ControlTemplate ft = new ControlTemplate(typeof(System.Windows.Controls.Button)); 
             FrameworkElementFactory fb = new FrameworkElementFactory(typeof(Border)); 
-            fb.SetValue(Border.BackgroundProperty, Brushes.Transparent); 
+            fb.SetValue(Border.BackgroundProperty, System.Windows.Media.Brushes.Transparent); 
             fb.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
             FrameworkElementFactory fc = new FrameworkElementFactory(typeof(ContentPresenter)); 
-            fc.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center); 
+            fc.SetValue(ContentPresenter.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center); 
             fc.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center); 
             fc.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 2, 8, 2));
             fb.AppendChild(fc); ft.VisualTree = fb; 
-            flatBtnStyle.Setters.Add(new Setter(Button.TemplateProperty, ft)); 
-            btn.SetValue(Button.StyleProperty, flatBtnStyle);
+            flatBtnStyle.Setters.Add(new Setter(System.Windows.Controls.Button.TemplateProperty, ft)); 
+            btn.SetValue(System.Windows.Controls.Button.StyleProperty, flatBtnStyle);
             
-            btn.AddHandler(Button.ClickEvent, new RoutedEventHandler(this.DeleteAccount)); 
+            btn.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(this.DeleteAccount)); 
             dp.AppendChild(btn); 
             
             FrameworkElementFactory txt = new FrameworkElementFactory(typeof(TextBlock)); 
@@ -453,31 +604,49 @@ namespace RdpLauncher
         }
 
         private Style CreateButtonStyle() { 
-            Style sw = new Style(typeof(Button)); ControlTemplate tw = new ControlTemplate(typeof(Button)); FrameworkElementFactory bw = new FrameworkElementFactory(typeof(Border)); bw.SetValue(Border.CornerRadiusProperty, new CornerRadius(10)); bw.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty)); FrameworkElementFactory cw = new FrameworkElementFactory(typeof(ContentPresenter)); cw.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center); cw.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center); bw.AppendChild(cw); tw.VisualTree = bw; sw.Setters.Add(new Setter(Button.TemplateProperty, tw)); return sw; 
+            Style sw = new Style(typeof(System.Windows.Controls.Button)); ControlTemplate tw = new ControlTemplate(typeof(System.Windows.Controls.Button)); FrameworkElementFactory bw = new FrameworkElementFactory(typeof(Border)); bw.SetValue(Border.CornerRadiusProperty, new CornerRadius(10)); bw.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(System.Windows.Controls.Button.BackgroundProperty)); FrameworkElementFactory cw = new FrameworkElementFactory(typeof(ContentPresenter)); cw.SetValue(ContentPresenter.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center); cw.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center); bw.AppendChild(cw); tw.VisualTree = bw; sw.Setters.Add(new Setter(System.Windows.Controls.Button.TemplateProperty, tw)); return sw; 
         }
 
         private void UpdateConnectionStatus() { if (this.isConnecting) this.connectBtn.Content = "正在连接中..."; else this.connectBtn.Content = "立 即 连 接"; }
 
         private string Encrypt(string t) { if (string.IsNullOrEmpty(t)) return null; byte[] d = Encoding.UTF8.GetBytes(t); byte[] enc = ProtectedData.Protect(d, null, DataProtectionScope.CurrentUser); return Convert.ToBase64String(enc); }
-        private string Decrypt(string t) { if (string.IsNullOrEmpty(t)) return ""; byte[] d = Convert.FromBase64String(t); byte[] dec = ProtectedData.Unprotect(d, null, DataProtectionScope.CurrentUser); return Encoding.UTF8.GetString(dec); }
+        private string Decrypt(string t) { if (string.IsNullOrEmpty(t)) return ""; byte[] d = Convert.FromBase64String(t); try { byte[] dec = ProtectedData.Unprotect(d, null, DataProtectionScope.CurrentUser); return Encoding.UTF8.GetString(dec); } catch { return ""; } }
 
-        private void UpdateAvatarDisplay(Ellipse e) { if (File.Exists(this.avatarPath)) { try { BitmapImage b = new BitmapImage(); b.BeginInit(); b.UriSource = new Uri(this.avatarPath); b.CacheOption = BitmapCacheOption.OnLoad; b.EndInit(); e.Fill = new ImageBrush(b) { Stretch = Stretch.UniformToFill }; } catch { e.Fill = Brushes.Gray; } } else { e.Fill = Brushes.DarkGray; } }
+        private DrawingImage CreateSvgDrawing(System.Windows.Media.Color color) {
+            GeometryDrawing gd = new GeometryDrawing();
+            gd.Geometry = Geometry.Parse("M840.838602 147.210649H182.479867c-48.899834 0-88.428619 41.232612-88.428619 92.177038v395.799002c0 50.774043 39.528785 92.177038 88.428619 92.177038h291.865557v84.339434h-162.715474c-11.415641 0-20.616306 12.949085-20.616306 29.135441v12.949085c0 16.015973 9.200666 29.135441 20.616306 29.135441H707.9401c11.415641 0 20.616306-12.949085 20.616306-29.135441v-12.949085c0-16.015973-9.200666-29.135441-20.616306-29.135441h-157.603994V727.53411h290.672879c48.899834 0 88.428619-41.232612 88.428619-92.177038V239.387687c-0.340765-50.774043-40.039933-92.177038-88.599002-92.177038zM645.409651 587.649917c-7.326456 7.156073-19.082862 7.156073-26.750084-0.170383L432.260899 405.340433v125.231281c0 10.052579-8.689517 18.230948-18.742097 18.230948-10.393344 0-18.742097-8.519135-18.742097-18.230948v-161.352413c0-1.363062 0.170383-2.726123 0.511149-3.918802-0.340765-1.192679-0.511148-2.55574-0.511149-3.918802 0-10.052579 8.689517-18.230948 18.742097-18.230948h165.441597c10.393344 0 18.742097 8.519135 18.742097 18.230948 0 10.052579-8.689517 18.230948-18.742097 18.230949h-120.290183l186.569052 182.139101c7.496839 7.156073 7.326456 18.912479 0.170383 25.89817z");
+            gd.Brush = new SolidColorBrush(color);
+            return new DrawingImage(gd);
+        }
 
-        private void UploadAvatarClick(object s, MouseButtonEventArgs e) { Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog(); dlg.Filter = "图片|*.png;*.jpg"; if (dlg.ShowDialog() == true) { try { File.Copy(dlg.FileName, this.avatarPath, true); this.UpdateAvatarDisplay(this.avatarCircle); } catch {} } }
+        private void UpdateAvatarDisplay(Ellipse e) { 
+            if (System.IO.File.Exists(this.avatarPath)) { 
+                try { 
+                    BitmapImage b = new BitmapImage(); b.BeginInit(); b.UriSource = new Uri(this.avatarPath); b.CacheOption = BitmapCacheOption.OnLoad; b.EndInit(); 
+                    e.Fill = new ImageBrush(b) { Stretch = Stretch.UniformToFill }; 
+                } catch { 
+                    e.Fill = new ImageBrush(this.CreateSvgDrawing(System.Windows.Media.Color.FromRgb(2, 248, 233))) { Stretch = Stretch.UniformToFill }; 
+                } 
+            } else { 
+                e.Fill = new ImageBrush(this.CreateSvgDrawing(System.Windows.Media.Color.FromRgb(2, 248, 233))) { Stretch = Stretch.UniformToFill }; 
+            } 
+        }
+
+        private void UploadAvatarClick(object s, MouseButtonEventArgs e) { Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog(); dlg.Filter = "图片|*.png;*.jpg"; if (dlg.ShowDialog() == true) { try { System.IO.File.Copy(dlg.FileName, this.avatarPath, true); this.UpdateAvatarDisplay(this.avatarCircle); } catch {} } }
 
         private void LoadConnections() { 
-            if (File.Exists(this.configPath)) { try { using (FileStream fs = File.OpenRead(this.configPath)) { DataContractJsonSerializer s = new DataContractJsonSerializer(typeof(List<ConnectionEntry>)); List<ConnectionEntry> list = (List<ConnectionEntry>)s.ReadObject(fs); this.connections.Clear(); if (list != null) { foreach (ConnectionEntry item in list) this.connections.Add(item); } } } catch {} } 
+            if (System.IO.File.Exists(this.configPath)) { try { using (FileStream fs = System.IO.File.OpenRead(this.configPath)) { DataContractJsonSerializer s = new DataContractJsonSerializer(typeof(List<ConnectionEntry>)); List<ConnectionEntry> list = (List<ConnectionEntry>)s.ReadObject(fs); this.connections.Clear(); if (list != null) { foreach (ConnectionEntry item in list) this.connections.Add(item); } } } catch {} } 
         }
         private void SaveConnections() { 
             try { using (FileStream fs = new FileStream(this.configPath, FileMode.Create)) { DataContractJsonSerializer s = new DataContractJsonSerializer(typeof(List<ConnectionEntry>)); s.WriteObject(fs, new List<ConnectionEntry>(this.connections)); } } catch {} 
         }
 
         private void DeleteAccount(object s, RoutedEventArgs e) { 
-            Button b = s as Button;
+            System.Windows.Controls.Button b = s as System.Windows.Controls.Button;
             if (b != null) {
                 ConnectionEntry en = b.DataContext as ConnectionEntry;
                 if (en != null) {
-                    if (MessageBox.Show("确定清除?", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+                    if (System.Windows.MessageBox.Show("确定清除?", "确认", MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
                         this.connections.Remove(en); this.SaveConnections(); this.CmdKeyDelete(en.Host);
                     }
                 }
@@ -513,6 +682,10 @@ namespace RdpLauncher
         private void StartConnection() {
             string h = this.ipBox.Text.Trim(); string u = this.userBox.Text.Trim(); string p = this.passBox.Password; if (string.IsNullOrEmpty(h) || string.IsNullOrEmpty(u)) return;
             
+            foreach (var proc in Process.GetProcessesByName("mstsc")) {
+                try { proc.Kill(); } catch { }
+            }
+
             this.isConnecting = true; this.connectBtn.IsEnabled = false; 
             try { 
                 StringBuilder rdpHost = new StringBuilder(); 
@@ -551,8 +724,8 @@ namespace RdpLauncher
                 this.activeMstsc.EnableRaisingEvents = true;
 
                 this.activeMstsc.Exited += (s, ev) => {
-                    if (Application.Current != null) {
-                        Application.Current.Dispatcher.BeginInvoke(new Action(() => {
+                    if (System.Windows.Application.Current != null) {
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => {
                             this.isConnecting = false; this.connectBtn.IsEnabled = true; 
                         }));
                     }
@@ -565,12 +738,15 @@ namespace RdpLauncher
                     rt.Stop(); 
                     if (this.activeMstsc != null && !this.activeMstsc.HasExited) {
                         this.SaveSuccessfulConnection(h, u, p, dmIdx, resIdx, colIdx);
+                        this.isConnecting = false; 
+                        this.connectBtn.IsEnabled = true;
+                        this.mainWindow.Close();
                     }
                 }; 
                 rt.Start(); 
             } catch (Exception ex) { 
                 this.isConnecting = false; this.connectBtn.IsEnabled = true; 
-                MessageBox.Show("启动远程桌面失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("启动远程桌面失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private void CmdKeySave(string h, string u, string p) { ProcessStartInfo psi = new ProcessStartInfo("cmdkey", "/generic:TERMSRV/" + h + " /user:\"" + u + "\" /pass:\"" + p + "\""); psi.CreateNoWindow = true; psi.UseShellExecute = false; Process.Start(psi); }
