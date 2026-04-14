@@ -212,6 +212,10 @@ namespace RdpLauncher
             reconnect.Click += (s, e) => { this.StartConnection(); popup.IsOpen = false; };
             ttp.Children.Add(reconnect);
 
+            System.Windows.Controls.Button shareBtn = new System.Windows.Controls.Button() { Content = "共享文件", Height = 28, Margin = new Thickness(0, 5, 0, 0) };
+            shareBtn.Click += (s, e) => { this.OnShareClick(s, null); popup.IsOpen = false; };
+            ttp.Children.Add(shareBtn);
+
             System.Windows.Controls.Button restore = new System.Windows.Controls.Button() { Content = "返回界面", Height = 28, Margin = new Thickness(0, 5, 0, 0) };
             restore.Click += (s, e) => { this.RestoreMainWindow(); popup.IsOpen = false; };
             ttp.Children.Add(restore);
@@ -330,7 +334,7 @@ namespace RdpLauncher
             this.shareIcon.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 128, 128, 128));
             this.shareIcon.Background = System.Windows.Media.Brushes.Transparent; 
             this.shareIcon.Cursor = System.Windows.Input.Cursors.Hand;
-            this.shareIcon.ToolTip = "打开共享文件夹 (\\ip)";
+            this.shareIcon.ToolTip = "打开共享文件 (\\ip)";
             this.shareIcon.MouseLeftButtonDown += new MouseButtonEventHandler(this.OnShareClick);
             this.shareIcon.MouseEnter += (s, ev) => { this.shareIcon.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 0, 229, 255)); this.shareIcon.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 0, 229, 255)); };
             this.shareIcon.MouseLeave += (s, ev) => { this.shareIcon.Background = System.Windows.Media.Brushes.Transparent; this.shareIcon.BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, 128, 128, 128)); };
