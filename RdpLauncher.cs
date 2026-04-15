@@ -57,6 +57,7 @@ namespace RdpLauncher
         private ComboBox displayModeBox;
         private ComboBox resolutionBox;
         private ComboBox colorDepthBox;
+        private ComboBox miniMode;
         private Grid rootGrid;
         private StackPanel mainStack;
         private System.Windows.Controls.Button connectBtn;
@@ -202,11 +203,11 @@ namespace RdpLauncher
             StackPanel ttp = new StackPanel() { Margin = new Thickness(0) };
             
             this.CreateLabelInPanel(ttp, "快速模式");
-            ComboBox miniMode = new ComboBox() { Width = 150, Margin = new Thickness(0, 0, 0, 5) };
-            miniMode.Items.Add("📺 全部显示器"); miniMode.Items.Add("🖥️ 仅主显示器"); miniMode.Items.Add("💻 仅副显示器");
-            miniMode.SelectedIndex = 0;
-            miniMode.SelectionChanged += (s, e) => { if (this.displayModeBox != null) this.displayModeBox.SelectedIndex = miniMode.SelectedIndex; };
-            ttp.Children.Add(miniMode);
+            this.miniMode = new ComboBox() { Width = 150, Margin = new Thickness(0, 0, 0, 5) };
+            this.miniMode.Items.Add("📺 全部显示器"); this.miniMode.Items.Add("🖥️ 仅主显示器"); this.miniMode.Items.Add("💻 仅副显示器");
+            if (this.displayModeBox != null) this.miniMode.SelectedIndex = this.displayModeBox.SelectedIndex;
+            this.miniMode.SelectionChanged += (s, e) => { if (this.displayModeBox != null && !this.isAutoFilling && this.displayModeBox.SelectedIndex != this.miniMode.SelectedIndex) this.displayModeBox.SelectedIndex = this.miniMode.SelectedIndex; };
+            ttp.Children.Add(this.miniMode);
 
             System.Windows.Controls.Button reconnect = new System.Windows.Controls.Button() { Content = "重新连接", Height = 28 };
             reconnect.Click += (s, e) => { this.StartConnection(); popup.IsOpen = false; };
@@ -378,6 +379,7 @@ namespace RdpLauncher
             this.displayModeBox.IsEditable = true; this.displayModeBox.IsReadOnly = true; this.displayModeBox.Background = System.Windows.Media.Brushes.Transparent; this.displayModeBox.BorderThickness = new Thickness(0); this.displayModeBox.VerticalContentAlignment = VerticalAlignment.Center; this.displayModeBox.FontSize = 14;
             this.displayModeBox.ItemContainerStyle = this.GetComboItemStyle();
             this.displayModeBox.Items.Add("📺 全部显示器"); this.displayModeBox.Items.Add("🖥️ 仅主显示器"); this.displayModeBox.Items.Add("💻 仅副显示器"); this.displayModeBox.SelectedIndex = 0;
+            this.displayModeBox.SelectionChanged += (s, e) => { if (this.miniMode != null && this.miniMode.SelectedIndex != this.displayModeBox.SelectedIndex) this.miniMode.SelectedIndex = this.displayModeBox.SelectedIndex; };
             mb.Child = this.displayModeBox; this.mainStack.Children.Add(mb);
 
             this.CreateLabel(this.mainStack, "分辨率");
@@ -537,13 +539,16 @@ namespace RdpLauncher
             ComboBox box = (ComboBox)s;
             ConnectionEntry en = box.SelectedItem as ConnectionEntry; 
             if (en != null) { 
-                this.isAutoFilling = true;
-                this.userBox.Text = en.Username; 
-                this.passBox.Password = this.Decrypt(en.EncryptedPass); 
-                this.displayModeBox.SelectedIndex = en.DisplayModeIndex;
-                this.resolutionBox.SelectedIndex = en.ResolutionIndex;
-                this.colorDepthBox.SelectedIndex = en.ColorDepthIndex;
-                this.isAutoFilling = false;
+                try {
+                    this.isAutoFilling = true;
+                    this.userBox.Text = en.Username; 
+                    this.passBox.Password = this.Decrypt(en.EncryptedPass); 
+                    this.displayModeBox.SelectedIndex = en.DisplayModeIndex;
+                    this.resolutionBox.SelectedIndex = en.ResolutionIndex;
+                    this.colorDepthBox.SelectedIndex = en.ColorDepthIndex;
+                } finally {
+                    this.isAutoFilling = false;
+                }
                 if (System.Windows.Application.Current != null) System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => { 
                     this.isAutoFilling = true;
                     box.Text = en.Host; 
