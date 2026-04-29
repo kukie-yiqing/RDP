@@ -46,9 +46,17 @@ namespace RdpLauncher
         [DllImport("shell32.dll", SetLastError = true)]
         private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
 
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
         private const int WM_SETICON = 0x0080;
         private const int ICON_SMALL = 0;
         private const int ICON_BIG = 1;
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
 
         private Window mainWindow;
         private ComboBox ipBox;
@@ -153,6 +161,13 @@ namespace RdpLauncher
 
         private void CreateStickyWindow() {
             this.stickyWindow = new Window();
+            this.stickyWindow.SourceInitialized += (s, ev) => {
+                try {
+                    IntPtr hwnd = new WindowInteropHelper(this.stickyWindow).Handle;
+                    int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                    SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
+                } catch { }
+            };
             this.stickyWindow.Title = "RemoteDesk Mini";
             this.stickyWindow.Width = 26; this.stickyWindow.Height = 26;
             this.stickyWindow.WindowStyle = WindowStyle.None;
@@ -260,6 +275,7 @@ namespace RdpLauncher
         private void CreateUI()
         {
             this.mainWindow = new Window();
+            this.mainWindow.ShowInTaskbar = false;
             this.mainWindow.Title = "Remote Desk RDP Launcher";
             this.mainWindow.SourceInitialized += new EventHandler(this.OnSourceInitialized);
             this.mainWindow.Width = 400;
@@ -421,6 +437,11 @@ namespace RdpLauncher
 
         private void OnSourceInitialized(object sender, EventArgs e) {
             this.SetWindowIconViaWin32();
+            try {
+                IntPtr hwnd = new WindowInteropHelper(this.mainWindow).Handle;
+                int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
+            } catch { }
         }
 
         private void SetWindowIconViaWin32() {
