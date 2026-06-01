@@ -255,7 +255,7 @@ namespace RdpLauncher
             double screenH = SystemParameters.PrimaryScreenHeight;
             this.stickyWindow.Left = screenW - this.stickyWindow.Width;
             this.stickyWindow.Top = screenH - 150;
-            this.stickyWindow.Hide();
+            this.stickyWindow.Show();
         }
 
         private void CreateLabelInPanel(StackPanel p, string t) {
@@ -280,6 +280,7 @@ namespace RdpLauncher
             this.mainWindow.SourceInitialized += new EventHandler(this.OnSourceInitialized);
             this.mainWindow.Width = 400;
             this.mainWindow.Height = 760;
+            this.mainWindow.Topmost = true;
             this.mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             this.mainWindow.ResizeMode = ResizeMode.CanMinimize;
             this.mainWindow.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
@@ -432,7 +433,7 @@ namespace RdpLauncher
             this.statusTimer.Interval = TimeSpan.FromSeconds(1);
             this.statusTimer.Tick += new EventHandler(OnStatusTick);
             this.statusTimer.Start();
-            this.mainWindow.Show();
+            this.mainWindow.Hide();
         }
 
         private void OnSourceInitialized(object sender, EventArgs e) {
