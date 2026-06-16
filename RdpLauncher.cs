@@ -52,11 +52,19 @@ namespace RdpLauncher
         [DllImport("user32.dll")]
         private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
         private const int WM_SETICON = 0x0080;
         private const int ICON_SMALL = 0;
         private const int ICON_BIG = 1;
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOACTIVATE = 0x0010;
 
         private Window mainWindow;
         private ComboBox ipBox;
@@ -168,6 +176,10 @@ namespace RdpLauncher
                     SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
                 } catch { }
             };
+            this.stickyWindow.Closing += (s, ev) => {
+                // Prevent Alt+F4 or other close events from closing the sticky window
+                ev.Cancel = true;
+            };
             this.stickyWindow.Title = "RemoteDesk Mini";
             this.stickyWindow.Width = 26; this.stickyWindow.Height = 26;
             this.stickyWindow.WindowStyle = WindowStyle.None;
@@ -256,6 +268,27 @@ namespace RdpLauncher
             this.stickyWindow.Left = screenW - this.stickyWindow.Width;
             this.stickyWindow.Top = screenH - 150;
             this.stickyWindow.Show();
+
+            // Setup a timer to periodically ensure the floating window stays topmost and visible
+            DispatcherTimer keepOnTopTimer = new DispatcherTimer();
+            keepOnTopTimer.Interval = TimeSpan.FromMilliseconds(500);
+            keepOnTopTimer.Tick += (s, ev) => {
+                try {
+                    if (this.stickyWindow != null) {
+                        // Ensure window visibility
+                        if (this.stickyWindow.Visibility != Visibility.Visible) {
+                            this.stickyWindow.Visibility = Visibility.Visible;
+                            this.stickyWindow.Show();
+                        }
+                        // Use native Win32 SetWindowPos to force z-order to topmost without stealing focus
+                        IntPtr hwnd = new WindowInteropHelper(this.stickyWindow).Handle;
+                        if (hwnd != IntPtr.Zero) {
+                            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                        }
+                    }
+                } catch { }
+            };
+            keepOnTopTimer.Start();
         }
 
         private void CreateLabelInPanel(StackPanel p, string t) {
@@ -268,7 +301,7 @@ namespace RdpLauncher
                 this.mainWindow.Visibility = Visibility.Visible;
                 this.mainWindow.WindowState = WindowState.Normal;
                 this.mainWindow.Activate();
-                if (this.stickyWindow != null) this.stickyWindow.Hide();
+                // We keep the floating window (stickyWindow) visible as per requirement
             }
         }
 
